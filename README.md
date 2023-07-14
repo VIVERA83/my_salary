@@ -2,6 +2,7 @@
 
 ___
 <span id="0"></span>
+### [Консольные команды](docs/comand.md)
 
 ### <span id="1">1. </span><span style="color:purple">Описание</span>
 
