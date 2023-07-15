@@ -317,7 +317,7 @@ class AuthAccessor(BaseAccessor):
             ['api/v1/refresh', 'GET'],
             ['admin/*', '*'],
         ]
-        logging.info('Auth service is running')
+        self.logger.info('Auth service is running')
 
     def _custom_openapi(self) -> Dict[str, Any]:
         """Обновления схемы в Openapi.

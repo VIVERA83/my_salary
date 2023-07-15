@@ -3,7 +3,7 @@ import logging
 import typing
 
 if typing.TYPE_CHECKING:
-    from src.auth.components import Application
+    from core.components import Application
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,6 +18,7 @@ class BaseAccessor:
             app: The application
         """
         self.app = app
+        self.logger = app.logger
         app.on_event('startup')(self.connect)
         app.on_event('shutdown')(self.disconnect)
         self._init()

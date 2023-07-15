@@ -1,5 +1,4 @@
 """Database..."""
-import logging
 from typing import Optional, Type
 from uuid import uuid4
 
@@ -59,10 +58,10 @@ class Database(BaseAccessor):
             future=True,
         )
         self.session = AsyncSession(self._engine, expire_on_commit=False)
-        logging.info('Connected to Postgres')
+        self.logger.info('Connected to Postgres')
 
     async def disconnect(self):
         """Closing the connection to the database."""
         if self._engine:
             await self._engine.dispose()
-        logging.info('Disconnected from Postgres')
+        self.logger.info('Disconnected from Postgres')
