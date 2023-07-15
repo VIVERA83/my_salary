@@ -5,7 +5,8 @@ from core.logger import setup_logging
 from core.middelware import setup_middleware
 from core.routes import setup_routes
 from core.settings import Settings
-# from store import setup_store
+from auth.setup import setup as setup_auth
+from store import setup_store
 
 app = Application()
 
@@ -18,6 +19,7 @@ def setup_app() -> "Application":
     setup_middleware(app)
     setup_exception(app)
     setup_routes(app)
-    # setup_store(app)
+    setup_store(app)
+    setup_auth(app)
     app.logger.info(f"Swagger link: {app.settings.base_url}{app.docs_url}")  # noqa
     return app

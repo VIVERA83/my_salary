@@ -4,11 +4,13 @@ import os
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
+from base.literals import ALGORITHMS, METHODS, HEADERS
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
 
 
 class Postgres(BaseModel):
-    """Параметры потключения к PostgresQL"""
+    """Параметры подключения к PostgresQL"""
 
     db: str
     user: str
@@ -31,6 +33,21 @@ class Log(BaseModel):
     traceback: bool = False
 
 
+class Authorization(BaseModel):
+    """Authorization settings."""
+
+    key: str
+    secret_key: str
+    algorithms: list[ALGORITHMS]
+    access_expires_delta: int = 120
+    refresh_expires_delta: int = 3600
+
+    allowed_origins: list[str]
+    allow_methods: list[METHODS]
+    allow_headers: list[HEADERS]
+    allow_credentials: bool
+
+
 class Settings(BaseSettings):
     """Объединяющий класс, в котором собраны настройки приложения."""
 
@@ -39,6 +56,7 @@ class Settings(BaseSettings):
     port: int
     postgres: Postgres
     logging: Log
+    auth: Authorization
 
     class Config:
         """Настройки для чтения переменных окружения из файла."""

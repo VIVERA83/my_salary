@@ -18,7 +18,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: "Request", call_next: RequestResponseEndpoint
     ) -> Response:
-        """Обрапботка ошибок при мполнении handlers (views)."""
+        """Обработка ошибок при исполнении handlers (views)."""
         try:
             response = await call_next(request)
             return response

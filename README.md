@@ -36,21 +36,20 @@ cd derbit
   примера [.env_example](.env_example)*:__</span>
 
 ```bash
-echo "COMPOSE_PROJECT_NAME="derbit"
-# Настройка приложения
-LOGGING_LEVEL="DEBUG"
-LOGGING_GURU="1"
-HOST="0.0.0.0"
-PORT=8004
-TRACEBACK="False"
+echo "COMPOSE_PROJECT_NAME="my_salary"
+
+# Настройка настройка логирования
+LOGGING__LEVEL="DEBUG"
+LOGGING__GURU="True"
+LOGGING__TRACEBACK="False"
 
 # Настройка Postgres
-POSTGRES__DB=test_db
-POSTGRES__USER=test_user
-POSTGRES__PASSWORD=password
-POSTGRES__HOST=postgres_derbit
-POSTGRES__PORT=5432
-POSTGRES__DB_SCHEMA=derbit
+POSTGRES__DB="test_db"
+POSTGRES__USER="test_user"
+POSTGRES__PASSWORD="password"
+POSTGRES__HOST="127.0.0.1"
+POSTGRES__PORT="5435"
+POSTGRES__DB_SCHEMA="my salary"
 
 POSTGRES_DB="${POSTGRES__DB}"
 POSTGRES_USER="${POSTGRES__USER}"
@@ -58,9 +57,21 @@ POSTGRES_PASSWORD="${POSTGRES__PASSWORD}"
 POSTGRES_HOST="${POSTGRES__HOST}"
 POSTGRES_PORT="${POSTGRES__PORT}"
 
-#app
-LOGGING__GURU=True
-LOGGING__TRACEBACK=True
+# Настройка Authorization
+AUTH__KEY="644bcc7e564373040999aac89e7622f3ca71fba1d972fd94a31c3bfbf24e3938"
+AUTH__SECRET_KEY="strange code is written"
+AUTH__ALGORITHMS=["HS256"]
+AUTH__ACCESS_EXPIRES_DELTA=60
+AUTH__REFRESH_EXPIRES_DELTA=172800
+AUTH__ALLOWED_ORIGINS=["*"]
+AUTH__ALLOW_METHODS=["HEAD", "OPTIONS", "GET", "POST", "DELETE", "PATCH"]
+AUTH__ALLOW_HEADERS=["Content-Type", "Set-Cookie", "Access-Control-Allow-Headers", "Access-Control-Allow-Origin", "Authorization"]
+AUTH__ALLOW_CREDENTIALS="True"
+
+# Настройка приложения
+NAME="My_salary"
+HOST="0.0.0.0"
+PORT="8004"
 " >>.env
 ```
 

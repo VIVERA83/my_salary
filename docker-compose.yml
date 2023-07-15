@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  my_salary_api:
+    environment:
+      - COMPOSE_PROJECT_NAME
+    container_name: my_salary_api
+    build:
+      context: .
+      dockerfile: dockerfile
+    env_file:
+      - .env
+    command: uvicorn main:app --host $HOST --port $PORT --workers $UVICORN_WORKERS
+    #    command: bash -c "
+    #      alembic upgrade head
+    #      && uvicorn main:app --host $HOST --port $PORT --workers $UVICORN_WORKERS
+    #      "
+    ports:
+      - ${PORT}:${PORT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    container_name: postgres_my_salary
+    image: postgres:13-alpine3.15
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -V" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - ${POSTGRES__PORT}:${POSTGRES__PORT}
+
+volumes:
+  postgres_volume:
+
