@@ -6,7 +6,6 @@ from fastapi import HTTPException, status
 from fastapi.openapi.utils import get_openapi
 from fastapi_jwt import JwtAccessBearer
 from jose import JWSError, jws
-from pydantic_settings import BaseSettings
 from sqlalchemy import insert, select, update
 from starlette.responses import Response
 
@@ -21,7 +20,7 @@ class AuthAccessor(BaseAccessor):
     """Authorization service."""
 
     access_security: Optional[JwtAccessBearer] = None
-    settings: Optional[BaseSettings] = None
+    settings: Optional[AuthorizationSettings] = None
     free_access: Optional[list[list[str]]] = None
 
     def _init(self):
@@ -165,12 +164,7 @@ class AuthAccessor(BaseAccessor):
         Returns:
             object: The response
         """
-        response.set_cookie(
-            key='refresh_token_cookie',
-            value=refresh_token,
-            httponly=True,
-            max_age=self.settings.refresh_expires_delta,
-        )
+        self.access_security.set_refresh_cookie(response, refresh_token, timedelta(self.settings.refresh_expires_delta))
         return response
 
     async def verify_token(
@@ -287,14 +281,7 @@ class AuthAccessor(BaseAccessor):
              response: Response
         """
         request.session.clear()
-        response.set_cookie(
-            key='refresh_token_cookie',
-            value='',
-            httponly=True,
-            max_age=1,
-            samesite='none',
-            secure=True,
-        )
+        self.access_security.unset_refresh_cookie(response)
         await self.update_refresh_token(request.state.user_id)
 
     def connect(self):
@@ -304,6 +291,7 @@ class AuthAccessor(BaseAccessor):
             ['docs', 'GET'],
             ['docs/oauth2-redirect', 'GET'],
             ['redoc', 'GET'],
+
             ['api/v1/create_user', 'POST'],
             ['api/v1/login', 'POST'],
             ['api/v1/refresh', 'GET'],
