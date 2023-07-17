@@ -1,13 +1,18 @@
 """Middleware приложения."""
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from auth.schemes import TokenSchema
-from auth.utils import HTTP_EXCEPTION
 from core import Application, Request
+
+HTTP_EXCEPTION = {
+    status.HTTP_401_UNAUTHORIZED: '401 Unauthorized',
+    status.HTTP_403_FORBIDDEN: '403 Forbidden',
+    status.HTTP_404_NOT_FOUND: '404 Not Found',
+}
 
 
 class AuthorizationMiddleware(BaseHTTPMiddleware):

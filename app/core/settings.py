@@ -1,11 +1,10 @@
 """Модуль начальных настроек приложения."""
 import os
-from typing import Optional
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-from auth.utils import ALGORITHMS, METHODS, HEADERS
+from core.utils import ALGORITHMS, METHODS, HEADERS
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
 
@@ -79,5 +78,3 @@ class AuthorizationSettings(Base):
     algorithms: list[ALGORITHMS]
     access_expires_delta: int = 120
     refresh_expires_delta: int = 3600
-
-

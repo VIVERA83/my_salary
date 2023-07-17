@@ -1,7 +1,5 @@
 from typing import Literal
 
-from fastapi import status
-
 ALGORITHMS = Literal[
     "HS256",
     "HS128",
@@ -25,9 +23,3 @@ HEADERS = Literal[
     "Authorization",
     "*",
 ]
-
-HTTP_EXCEPTION = {
-    status.HTTP_401_UNAUTHORIZED: '401 Unauthorized',
-    status.HTTP_403_FORBIDDEN: '403 Forbidden',
-    status.HTTP_404_NOT_FOUND: '404 Not Found',
-}
