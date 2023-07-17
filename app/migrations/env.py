@@ -64,7 +64,7 @@ async def run_migrations_online() -> None:
             future=True,
         )
     )
-    current_tenant = settings.postgres.db_schema
+    current_tenant = settings.postgres.postgres_db_schema
     async with connectable.connect() as connection:
         await connection.execute(
             text("CREATE SCHEMA IF NOT EXISTS %s" % current_tenant)

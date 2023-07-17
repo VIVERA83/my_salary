@@ -5,6 +5,7 @@ import sys
 from loguru import logger
 
 from core import Application
+from core.settings import Settings
 
 
 def setup_logging(app: Application) -> None:
@@ -13,20 +14,21 @@ def setup_logging(app: Application) -> None:
     В данном случае есть вариант использовать loguru.
     https://github.com/Delgan/loguru
     """
-    if app.settings.logging.guru:
+    settings = Settings().logging
+    if settings.guru:
         logger.configure(
             **{
                 "handlers": [
                     {
                         "sink": sys.stderr,
-                        "level": app.settings.logging.level,
-                        "backtrace": app.settings.logging.traceback,
+                        "level": settings.level,
+                        "backtrace": settings.traceback,
                     },
                 ],
             }
         )
         app.logger = logger
     else:
-        logging.basicConfig(level=app.settings.logging.level)
+        logging.basicConfig(level=settings.log_level)
         app.logger = logging
     app.logger.info("Starting logging")

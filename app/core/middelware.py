@@ -5,6 +5,8 @@ from fastapi import status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import Response
 
 from core import Application, Request
@@ -33,6 +35,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                     "message": "The server is temporarily unavailable try contacting later",
                 }
                 status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
             if request.app.settings.logging.traceback:
                 request.app.logger.error(traceback.format_exc())
             else:
@@ -43,3 +46,11 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 def setup_middleware(app: Application):
     """Настройка подключаемый Middleware."""
     app.add_middleware(ErrorHandlingMiddleware)
+    app.add_middleware(SessionMiddleware, secret_key=app.settings.secret_key)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=app.settings.secret_key,
+        allow_methods=app.settings.allow_methods,
+        allow_headers=app.settings.allow_headers,
+        allow_credentials=app.settings.allow_credentials,
+    )

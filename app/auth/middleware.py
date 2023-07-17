@@ -1,17 +1,13 @@
 """Middleware приложения."""
-from icecream import ic
 
 from fastapi import HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from auth.schemes import TokenSchema
 from auth.utils import HTTP_EXCEPTION
 from core import Application, Request
-from core.settings import Authorization
 
 
 class AuthorizationMiddleware(BaseHTTPMiddleware):
@@ -38,9 +34,7 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         if request.app.store.auth.verification_public_access(request):
             return await call_next(request)
         try:
-            ic(1)
             access_token = request.app.store.auth.get_access_token(request)
-            ic(access_token)
             await request.app.store.auth.verify_token(access_token)
             request.state.token = TokenSchema(access_token)
             request.state.user_id = request.state.token.payload.user_id.hex
@@ -81,12 +75,4 @@ def setup_middleware(app: Application):
     Args:
         app: Fast Api application
     """
-    app.add_middleware(SessionMiddleware, secret_key=Authorization().secret_key)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=Authorization().secret_key,
-        allow_methods=Authorization().secret_key,
-        allow_headers=Authorization().secret_key,
-        allow_credentials=Authorization().secret_key,
-    )
     app.add_middleware(AuthorizationMiddleware)

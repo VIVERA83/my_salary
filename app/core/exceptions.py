@@ -14,7 +14,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={
             "detail": f"{exc.detail}.",
             "message": f"See the documentation: "
-                       f"http://{request.app.settings.host}:{request.app.settings.port}{request.app.docs_url}",
+                       f"http://{request.app.settings.app_host}:{request.app.settings.app_port}{request.app.docs_url}",
         },
         status_code=exc.status_code,
     )

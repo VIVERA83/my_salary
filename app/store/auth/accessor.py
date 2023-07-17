@@ -1,11 +1,10 @@
 import json
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from fastapi import HTTPException, status
 from fastapi.openapi.utils import get_openapi
 from fastapi_jwt import JwtAccessBearer
-from icecream import ic
 from jose import JWSError, jws
 from pydantic_settings import BaseSettings
 from sqlalchemy import insert, select, update
@@ -13,7 +12,7 @@ from starlette.responses import Response
 
 from base import BaseAccessor
 from core import Request
-from core.settings import Settings, Authorization
+from core.settings import AuthorizationSettings
 from store.auth.utils import METHODS, get_token
 from auth.models import UserModel as UserModel
 
@@ -22,25 +21,17 @@ class AuthAccessor(BaseAccessor):
     """Authorization service."""
 
     access_security: Optional[JwtAccessBearer] = None
-    key: Optional[str] = None
-    algorithms: Optional[list[str]] = None
-    access_expires_delta: Optional[int] = None
-    refresh_expires_delta: Optional[int] = None
-    free_access: Optional[list[list[str, str]]] = None
     settings: Optional[BaseSettings] = None
+    free_access: Optional[list[list[str]]] = None
 
     def _init(self):
-        self.settings = Authorization()
-        self.key = self.settings.key
-        self.algorithms = self.settings.algorithms
-        self.access_expires_delta = self.settings.access_expires_delta
-        self.refresh_expires_delta = self.settings.refresh_expires_delta
+        self.settings = AuthorizationSettings()
 
         self.access_security = JwtAccessBearer(
-            secret_key=self.key,
+            secret_key=self.settings.key,
             auto_error=True,
-            access_expires_delta=timedelta(seconds=self.access_expires_delta),
-            refresh_expires_delta=timedelta(seconds=self.refresh_expires_delta),
+            access_expires_delta=timedelta(seconds=self.settings.access_expires_delta),
+            refresh_expires_delta=timedelta(seconds=self.settings.refresh_expires_delta),
         )
         self.app.openapi = self._custom_openapi
 
@@ -178,7 +169,7 @@ class AuthAccessor(BaseAccessor):
             key='refresh_token_cookie',
             value=refresh_token,
             httponly=True,
-            max_age=self.refresh_expires_delta,
+            max_age=self.settings.refresh_expires_delta,
         )
         return response
 
@@ -198,7 +189,7 @@ class AuthAccessor(BaseAccessor):
         """
         try:
             payload: dict = json.loads(
-                jws.verify(access_token, self.key, self.algorithms),
+                jws.verify(access_token, self.settings.key, self.settings.algorithms),
             )
         except JWSError as ex:
             raise HTTPException(
@@ -308,7 +299,6 @@ class AuthAccessor(BaseAccessor):
 
     def connect(self):
         """Configuring the authorization service."""
-        self.algorithms = ['HS256']
         self.free_access = [
             ['openapi.json', 'GET'],
             ['docs', 'GET'],

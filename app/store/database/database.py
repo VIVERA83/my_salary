@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from base import BaseAccessor
-from core.settings import Settings
+from core.settings import PostgresSettings
 
 
 class Base(DeclarativeBase):
@@ -18,7 +18,7 @@ class Base(DeclarativeBase):
     """
 
     metadata = MetaData(
-        schema=Settings().postgres.db_schema,
+        schema=PostgresSettings().postgres_db_schema,
         quote_schema=True,
     )
     id: Mapped[uuid4] = mapped_column(
@@ -50,12 +50,14 @@ class Database(BaseAccessor):
     _engine: Optional[AsyncEngine] = None
     _db: Optional[Type[DeclarativeBase]] = None
     session: Optional[AsyncSession] = None
+    settings: Optional[PostgresSettings] = None
 
     async def connect(self):
         """Configuring the connection to the database."""
+        self.settings = PostgresSettings()
         self._db = Base
         self._engine = create_async_engine(
-            self.app.settings.postgres.dsn,
+            self.settings.dsn,
             echo=False,
             future=True,
         )

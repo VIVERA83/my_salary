@@ -54,7 +54,7 @@ async def create_user(
     await request.app.store.auth.update_response(refresh_token, response)
     return UserSchemaOut(
         id=new_user.id,
-        user_name=new_user.name,
+        user_name=new_user.app_name,
         email=new_user.email,
         access_token=access_token,
     )
