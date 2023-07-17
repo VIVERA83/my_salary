@@ -12,7 +12,7 @@ from pydantic_core.core_schema import FieldValidationInfo
 class BaseSchema(BaseModel):
     """Base Schema class."""
 
-    class Config(object):
+    class Config:
         """Config."""
 
         from_attributes = True

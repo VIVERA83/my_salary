@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Response, status, Depends
+from fastapi.security import HTTPBearer
 from sqlalchemy.exc import IntegrityError
 
 from core.components import Request
@@ -115,7 +116,9 @@ async def logout(request: 'Request', response: Response) -> Any:
     Returns:
         object: OkSchema
     """
-    await request.app.store.auth.logout(request, response)
+    request.session.clear()
+    response.set_cookie(key="refresh_token_cookie", value="", httponly=True, max_age=-1)
+    await request.app.store.auth.update_refresh_token(request.state.user_id)
     return OkSchema()
 
 
@@ -158,3 +161,21 @@ async def refresh(request: 'Request', response: Response) -> Any:
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail='Refresh token not valid',
     )
+
+
+@auth_route.get(
+    "/token",
+    summary='Проверить токен доступа',
+    tags=['AUTH'],
+    response_model=OkSchema,
+)
+def get_token(authorization=Depends(HTTPBearer(auto_error=True)), ) -> Any:  # noqa
+    """Returns Ok.
+
+    Args:
+        authorization: str. The authorization
+
+    Returns:
+        optional: ok if authorization is valid
+    """
+    return OkSchema()

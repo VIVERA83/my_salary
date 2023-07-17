@@ -1,19 +1,18 @@
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any, Dict, Optional
 
-from fastapi import HTTPException, status
 from fastapi.openapi.utils import get_openapi
 from fastapi_jwt import JwtAccessBearer
-from jose import JWSError, jws
+from jose import jws
 from sqlalchemy import insert, select, update
 from starlette.responses import Response
 
 from base import BaseAccessor
-from core import Request
+
 from core.settings import AuthorizationSettings
-from store.auth.utils import METHODS, get_token
-from auth.models import UserModel as UserModel
+from core.utils import METHODS
+from store.auth.models import UserModel as UserModel
 
 
 class AuthAccessor(BaseAccessor):
@@ -25,7 +24,6 @@ class AuthAccessor(BaseAccessor):
 
     def _init(self):
         self.settings = AuthorizationSettings()
-
         self.access_security = JwtAccessBearer(
             secret_key=self.settings.key,
             auto_error=True,
@@ -33,14 +31,6 @@ class AuthAccessor(BaseAccessor):
             refresh_expires_delta=timedelta(seconds=self.settings.refresh_expires_delta),
         )
         self.app.openapi = self._custom_openapi
-
-        self.app.router.add_api_route(
-            '/api/v1/token',
-            get_token,
-            methods=['GET'],
-            include_in_schema=True,
-            tags=['AUTH'],
-        )
 
     async def create_user(
             self,
@@ -167,92 +157,23 @@ class AuthAccessor(BaseAccessor):
         self.access_security.set_refresh_cookie(response, refresh_token, timedelta(self.settings.refresh_expires_delta))
         return response
 
-    async def verify_token(
-            self,
-            access_token: str,
-    ) -> Optional[str]:
-        """Token verification.
-
-        In case of successful verification, access_token is returned.
-
-        Args:
-            access_token: The access token
-
-        Returns:
-            optional: The token
-        """
-        try:
-            payload: dict = json.loads(
-                jws.verify(access_token, self.settings.key, self.settings.algorithms),
-            )
-        except JWSError as ex:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=ex.args[0],
-            )
-        if payload.get('exp') and payload['exp'] > int(datetime.now().timestamp()):
-            return access_token
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail='Access token from the expiration date, please login or refresh',
-        )
-
-    @staticmethod
-    def get_access_token(request: 'Request') -> Optional[str]:
-        """Попытка получить token из headers (authorization Bear).
-
-        Args:
-            request: Request
-
-        Returns:
-            object: access token
-        """
-        try:
-            return request.headers.get('Authorization').split('Bearer ')[1]
-        except (IndexError, AttributeError):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid Authorization.'
-                       'Expected format: {"Authorization": "Bearer <your token>"}',
-            )
-
-    @staticmethod
-    def get_refresh_token(request: 'Request') -> Optional[str]:
-        """Попытка получить refresh token из cookies.
-
-        Args:
-            request: Request
-
-        Returns:
-            object: refresh token
-        """
-        try:
-            return request.cookies['refresh_token_cookie']
-        except KeyError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid Authorization. Refresh token not found.',
-            )
-
-    def verification_public_access(self, request: 'Request') -> bool:
-        """Проверка на доступ к открытым источникам.
-
-        Args:
-            request: Request object
-
-        Returns:
-            object: True if accessing public methods.
-        """
-        request_path = '/'.join(request.url.path.split('/')[1:])
-        for path, method in self.free_access:
-            left, *right = path.split('/')
-            if right and '*' in right:
-                p_left, *temp = request_path.split('/')
-                if p_left == left:
-                    return True
-            elif path == request_path and method.upper() == request.method.upper():
-                return True
-        return False
+    # @staticmethod
+    # def get_refresh_token(request: 'Request') -> Optional[str]:
+    #     """Попытка получить refresh token из cookies.
+    #
+    #     Args:
+    #         request: Request
+    #
+    #     Returns:
+    #         object: refresh token
+    #     """
+    #     try:
+    #         return request.cookies['refresh_token_cookie']
+    #     except KeyError:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_401_UNAUTHORIZED,
+    #             detail='Invalid Authorization. Refresh token not found.',
+    #         )
 
     async def compare_refresh_token(self, user_id: str, refresh_token: str) -> bool:
         """Token Comparison.
@@ -270,19 +191,6 @@ class AuthAccessor(BaseAccessor):
         async with self.app.database.session.begin().session as session:
             smtp = select(UserModel.refresh_token).where(UserModel.id == user_id)
             return refresh_token == (await session.execute(smtp)).scalar()
-
-    async def logout(self, request: 'Request', response: Response):
-        """Logout.
-
-        Clear refresh_token in cookie
-
-        Args:
-             request: Request
-             response: Response
-        """
-        request.session.clear()
-        self.access_security.unset_refresh_cookie(response)
-        await self.update_refresh_token(request.state.user_id)
 
     def connect(self):
         """Configuring the authorization service."""
