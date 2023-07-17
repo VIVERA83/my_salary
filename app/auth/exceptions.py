@@ -1,17 +1,14 @@
 """Exception handler."""
-from typing import TYPE_CHECKING
-
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-if TYPE_CHECKING:
-    from core.components import Application, Request
+from core.components import Application, Request
 
 
 async def http_exception_handler(
-    request: 'Request',
-    exc: HTTPException,
+        request: Request,
+        exc: HTTPException,
 ) -> JSONResponse:
     """Catching exceptions.
 
@@ -29,15 +26,15 @@ async def http_exception_handler(
         content={
             'detail': '{exc}'.format(exc=exc.detail),
             'message': 'See the documentation {url}{docs}'.format(
-                url=request.app.settings.base_url,  # type: ignore[42]
-                docs=request.app.docs_url,  # type: ignore[34]
+                url=request.app.settings.base_url,
+                docs=request.app.docs_url,
             ),
         },
         status_code=exc.status_code,
     )
 
 
-def setup_exception(app: 'Application'):
+def setup_exception(app: Application):
     """Configuring pluggable exception handlers.
 
     Args:

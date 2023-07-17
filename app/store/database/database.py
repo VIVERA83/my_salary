@@ -7,7 +7,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from base.base_accessor import BaseAccessor
+from base import BaseAccessor
+from core.settings import Settings
 
 
 class Base(DeclarativeBase):
@@ -17,6 +18,7 @@ class Base(DeclarativeBase):
     """
 
     metadata = MetaData(
+        schema=Settings().postgres.db_schema,
         quote_schema=True,
     )
     id: Mapped[uuid4] = mapped_column(

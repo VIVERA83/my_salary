@@ -1,17 +1,14 @@
 """The base class responsible for linking logic to the base application."""
-import logging
-import typing
+from typing import TYPE_CHECKING
 
-if typing.TYPE_CHECKING:
-    from core.components import Application
-
-logging.basicConfig(level=logging.INFO)
+if TYPE_CHECKING:
+    from core import Application
 
 
 class BaseAccessor:
     """The base class responsible for linking logic to the base application."""
 
-    def __init__(self, app: 'Application'):
+    def __init__(self, app: "Application"):
         """Initialization of the connected service in the main Fast-Api application.
 
         Args:

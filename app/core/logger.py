@@ -1,15 +1,13 @@
 """Логирование."""
 import logging
 import sys
-import typing
 
 from loguru import logger
 
-if typing.TYPE_CHECKING:
-    from core.components import Application
+from core import Application
 
 
-def setup_logging(app: "Application") -> None:
+def setup_logging(app: Application) -> None:
     """Настройка логирования в приложении.
 
     В данном случае есть вариант использовать loguru.

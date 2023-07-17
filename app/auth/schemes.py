@@ -1,11 +1,12 @@
 """Schemas сервиса Авторизации (AUTH)."""
 import json
 from hashlib import sha256
-from typing import Any
+
 from uuid import UUID
 
 from jose import jws
-from pydantic import BaseModel, EmailStr, Field, SecretStr, validator
+from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
+from pydantic_core.core_schema import FieldValidationInfo
 
 
 class BaseSchema(BaseModel):
@@ -29,7 +30,6 @@ class UserSchemaRegistration(BaseSchema):
 
     name: str = Field(title='Имя', example='Василий')
     email: EmailStr = Field(title='email адрес пользователя, уникальный элемент.')
-    tg_username: str = Field(title='Имя в Telegram', example='test_user')
     password: str = Field(title='Пароль', example='password')
     password_confirmation: str = Field(
         title='Пароль, подтверждение ',
@@ -37,8 +37,8 @@ class UserSchemaRegistration(BaseSchema):
         exclude=True,
     )
 
-    @validator('password', 'password_confirmation')
-    def hash_passwords(cls, password: str) -> str:
+    @field_validator('password', 'password_confirmation')
+    def hash_passwords(cls, password: str) -> str:  # noqa
         """Хэшируем пароль.
 
         Args:
@@ -49,11 +49,11 @@ class UserSchemaRegistration(BaseSchema):
         """
         return sha256(password.encode('utf-8')).hexdigest()
 
-    @validator('password_confirmation')
+    @field_validator('password_confirmation')
     def passwords_match(
-        cls,
-        password_confirmation: str,
-        values: dict[str, Any],
+            cls,  # noqa
+            password_confirmation: str,
+            values: FieldValidationInfo,
     ) -> str:
         """Password comparison.
 
@@ -64,7 +64,7 @@ class UserSchemaRegistration(BaseSchema):
         Returns:
             str: password
         """
-        if password_confirmation != values['password']:
+        if password_confirmation != values.data.get('password'):
             raise ValueError('passwords do not match')
         return password_confirmation
 
@@ -90,8 +90,8 @@ class UserSchemaLogin(BaseModel):
         description='Пароль, который был указан при регистрации пользователя',
     )
 
-    @validator('password')
-    def hash_passwords(cls, password: SecretStr) -> str:
+    @field_validator('password')
+    def hash_passwords(cls, password: SecretStr) -> str:  # noqa
         """Password hashing.
 
         Args:
@@ -129,7 +129,7 @@ class TokenSchema(BaseModel):
         payload_data.update(payload_data.pop('subject'))
         payload = PayloadTokenSchema(**payload_data)
         headers = HeadersTokenSchema(**jws.get_unverified_headers(token))
-        TokenSchema.update_forward_refs()
+        TokenSchema.model_rebuild()
         super().__init__(payload=payload, headers=headers)
 
 

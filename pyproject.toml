@@ -18,6 +18,8 @@ python-jose = "^3.3.0"
 email-validator = "^2.0.0.post2"
 fastapi-jwt = "^0.1.12"
 asyncpg = "^0.28.0"
+alembic = "^1.11.1"
+icecream = "^2.1.3"
 
 
 

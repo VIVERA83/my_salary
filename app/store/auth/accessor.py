@@ -1,17 +1,19 @@
 import json
-import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from fastapi import HTTPException, status
 from fastapi.openapi.utils import get_openapi
 from fastapi_jwt import JwtAccessBearer
+from icecream import ic
 from jose import JWSError, jws
+from pydantic_settings import BaseSettings
 from sqlalchemy import insert, select, update
 from starlette.responses import Response
 
-from base.base_accessor import BaseAccessor
-from core.components import Request
+from base import BaseAccessor
+from core import Request
+from core.settings import Settings, Authorization
 from store.auth.utils import METHODS, get_token
 from auth.models import UserModel as UserModel
 
@@ -22,15 +24,18 @@ class AuthAccessor(BaseAccessor):
     access_security: Optional[JwtAccessBearer] = None
     key: Optional[str] = None
     algorithms: Optional[list[str]] = None
-    access_expires_delta: Optional[int] = 3600
-    refresh_expires_delta: Optional[int] = 14400
-    free_access: Optional[list[list[str, str]]] = None  # noqa: E501 # type: ignore[42]
+    access_expires_delta: Optional[int] = None
+    refresh_expires_delta: Optional[int] = None
+    free_access: Optional[list[list[str, str]]] = None
+    settings: Optional[BaseSettings] = None
 
     def _init(self):
-        self.key = self.app.settings.auth.key
-        self.algorithms = self.app.settings.auth.algorithms
-        self.access_expires_delta = self.app.settings.auth.access_expires_delta
-        self.refresh_expires_delta = self.app.settings.auth.refresh_expires_delta
+        self.settings = Authorization()
+        self.key = self.settings.key
+        self.algorithms = self.settings.algorithms
+        self.access_expires_delta = self.settings.access_expires_delta
+        self.refresh_expires_delta = self.settings.refresh_expires_delta
+
         self.access_security = JwtAccessBearer(
             secret_key=self.key,
             auto_error=True,
@@ -48,12 +53,11 @@ class AuthAccessor(BaseAccessor):
         )
 
     async def create_user(
-        self,
-        name: str,
-        email: str,
-        password: str,
-        tg_username: Optional[str] = None,
-        is_superuser: bool = False,
+            self,
+            name: str,
+            email: str,
+            password: str,
+            is_superuser: Optional[bool] = None,
     ) -> Optional[UserModel]:
         """Adding a new user to the database.
 
@@ -61,7 +65,6 @@ class AuthAccessor(BaseAccessor):
             name: name
             email: user email
             password: user password
-            tg_username: user in telegram
             is_superuser: boolean if true user is superuser
 
         Returns:
@@ -73,7 +76,6 @@ class AuthAccessor(BaseAccessor):
                 .values(
                     name=name,
                     email=email,
-                    tg_username=tg_username,
                     password=password,
                     is_superuser=is_superuser,
                 )
@@ -100,9 +102,9 @@ class AuthAccessor(BaseAccessor):
                 return user[0]
 
     async def update_refresh_token(
-        self,
-        user_id: str,
-        refresh_token: Optional[str] = None,
+            self,
+            user_id: str,
+            refresh_token: Optional[str] = None,
     ):
         """Updating the refresh token in the user account.
 
@@ -110,7 +112,7 @@ class AuthAccessor(BaseAccessor):
             user_id: The ID of the user in the database
             refresh_token: The refresh token
         """
-        async with self.app.database.session.begin().session as session:  # noqa: E501 # type: ignore[38,46]
+        async with self.app.database.session.begin().session as session:
             query = (
                 update(UserModel)
                 .filter(UserModel.id == user_id)
@@ -135,7 +137,7 @@ class AuthAccessor(BaseAccessor):
         payload: dict = json.loads(jws.get_unverified_claims(refresh_token))
         return await self.create_tokens(
             payload.get('subject', {}).get('user_id'),
-        )  # noqa: E501 # type: ignore[41]
+        )
 
     async def create_tokens(self, user_id: str) -> list[str]:
         """Token generation: access_token and refresh_token.
@@ -149,19 +151,21 @@ class AuthAccessor(BaseAccessor):
         subject = {'user_id': user_id}
         access_token = self.access_security.create_access_token(
             subject,
-        )  # noqa: E501 # type: ignore[45]
+        )
         refresh_token = self.access_security.create_refresh_token(
             subject,
-        )  # noqa: E501 # type: ignore[46]
+        )
         await self.update_refresh_token(user_id, refresh_token)
         return [access_token, refresh_token]
 
     async def update_response(
-        self,
-        refresh_token: str,
-        response: 'Response',
+            self,
+            refresh_token: str,
+            response: 'Response',
     ) -> 'Response':
         """Adding a token to cookies.
+
+        response.set_cookie(samesite='none', secure=True,)
 
         Args:
             refresh_token: The refresh token
@@ -175,14 +179,12 @@ class AuthAccessor(BaseAccessor):
             value=refresh_token,
             httponly=True,
             max_age=self.refresh_expires_delta,
-            samesite='none',
-            secure=True,
         )
         return response
 
     async def verify_token(
-        self,
-        access_token: str,
+            self,
+            access_token: str,
     ) -> Optional[str]:
         """Token verification.
 
@@ -196,7 +198,7 @@ class AuthAccessor(BaseAccessor):
         """
         try:
             payload: dict = json.loads(
-                jws.verify(access_token, self.key, self.algorithms),  # type: ignore[42]
+                jws.verify(access_token, self.key, self.algorithms),
             )
         except JWSError as ex:
             raise HTTPException(
@@ -226,7 +228,7 @@ class AuthAccessor(BaseAccessor):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid Authorization.'
-                'Expected format: {"Authorization": "Bearer <your token>"}',
+                       'Expected format: {"Authorization": "Bearer <your token>"}',
             )
 
     @staticmethod
@@ -257,7 +259,7 @@ class AuthAccessor(BaseAccessor):
             object: True if accessing public methods.
         """
         request_path = '/'.join(request.url.path.split('/')[1:])
-        for path, method in self.free_access:  # type: ignore[29]
+        for path, method in self.free_access:
             left, *right = path.split('/')
             if right and '*' in right:
                 p_left, *temp = request_path.split('/')
@@ -280,7 +282,7 @@ class AuthAccessor(BaseAccessor):
         Returns:
             object: True if the token is equal to the value from the refresh token.
         """
-        async with self.app.database.session.begin().session as session:  # noqa: E501 # type: ignore[38,46]
+        async with self.app.database.session.begin().session as session:
             smtp = select(UserModel.refresh_token).where(UserModel.id == user_id)
             return refresh_token == (await session.execute(smtp)).scalar()
 
@@ -302,7 +304,7 @@ class AuthAccessor(BaseAccessor):
             samesite='none',
             secure=True,
         )
-        await self.update_refresh_token(request.state.user_id)  # type: ignore[41]
+        await self.update_refresh_token(request.state.user_id)
 
     def connect(self):
         """Configuring the authorization service."""
@@ -330,10 +332,10 @@ class AuthAccessor(BaseAccessor):
         if self.app.openapi_schema:
             return self.app.openapi_schema
         openapi_schema = get_openapi(
-            title=self.app.title,  # type: ignore[19]
+            title=self.app.title,
             description=self.app.description,
             routes=self.app.routes,
-            version=self.app.version,  # type: ignore[21]
+            version=self.app.version,
         )
 
         for key, path in openapi_schema['paths'].items():
@@ -347,7 +349,7 @@ class AuthAccessor(BaseAccessor):
     def _is_free(self, url: str):
         is_free = False
         free_method = None
-        for f_p, f_m in self.free_access:  # type: ignore[25]
+        for f_p, f_m in self.free_access:
             if url[1:] == f_p:
                 is_free = True
                 free_method = f_m

@@ -1,12 +1,11 @@
 """Обработчик HTTP исключений"""
-from typing import TYPE_CHECKING
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from core import Request, Application
 
-if TYPE_CHECKING:
-    from core.components import Application
+
 
 
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -15,12 +14,12 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={
             "detail": f"{exc.detail}.",
             "message": f"See the documentation: "
-            f"http://{request.app.settings.host}:{request.app.settings.port}{request.app.docs_url}",
+                       f"http://{request.app.settings.host}:{request.app.settings.port}{request.app.docs_url}",
         },
         status_code=exc.status_code,
     )
 
 
-def setup_exception(app: "Application"):
-    """Настройка потключаемый обработчиков исключений."""
+def setup_exception(app: Application):
+    """Настройка подключаемый обработчиков исключений."""
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)

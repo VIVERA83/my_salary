@@ -1,6 +1,5 @@
 """Middleware приложения."""
 import traceback
-from typing import TYPE_CHECKING
 
 from fastapi import status
 from fastapi.responses import JSONResponse
@@ -8,15 +7,14 @@ from sqlalchemy.exc import IntegrityError
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
-if TYPE_CHECKING:
-    from core.components import Application, Request
+from core import Application, Request
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     """Обработка внутренних ошибок при выпоолнение обработсиков запроса."""
 
     async def dispatch(
-        self, request: "Request", call_next: RequestResponseEndpoint
+            self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         """Обработка ошибок при исполнении handlers (views)."""
         try:
@@ -42,6 +40,6 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
         return JSONResponse(content=content, status_code=status_code)
 
 
-def setup_middleware(app: "Application"):
+def setup_middleware(app: Application):
     """Настройка подключаемый Middleware."""
     app.add_middleware(ErrorHandlingMiddleware)

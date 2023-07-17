@@ -79,8 +79,7 @@ async def login(request: 'Request', response: Response, user: UserSchemaLogin) -
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    user_db = await request.app.store.auth.get_user_by_email(user.email)
-    if user_db:
+    if user_db := await request.app.store.auth.get_user_by_email(user.email):
         if user_db.password == user.password:
             access_token, refresh_token = await request.app.store.auth.create_tokens(
                 user_db.id.hex,

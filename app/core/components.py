@@ -1,14 +1,15 @@
 """Переназначенные компоненты Fast-Api."""
 import logging
+
 from typing import Optional
 
+from auth.schemes import TokenSchema
 from core.settings import Settings
 from fastapi import FastAPI, Request as FastAPIRequest, APIRouter
 from starlette.datastructures import State
 
-
-# from store import Store
-# from store.database.database import Database
+from store.store import Store
+from store.database.database import Database
 
 
 class Application(FastAPI):

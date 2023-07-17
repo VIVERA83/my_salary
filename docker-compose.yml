@@ -16,7 +16,7 @@ services:
     #      && uvicorn main:app --host $HOST --port $PORT --workers $UVICORN_WORKERS
     #      "
     ports:
-      - ${PORT}:${PORT}
+      - ${PORT}:5432
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,7 +34,7 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - ${POSTGRES__PORT}:${POSTGRES__PORT}
+      - ${POSTGRES__PORT}:5432
 
 volumes:
   postgres_volume:

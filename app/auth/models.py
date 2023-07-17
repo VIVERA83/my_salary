@@ -12,7 +12,7 @@ class UserModel(Base):
     name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(100), unique=True)
     password: Mapped[str] = mapped_column(String(100))
-    is_superuser: Mapped[bool] = mapped_column(default=False, index=True)
+    is_superuser: Mapped[bool] = mapped_column(nullable=True, unique=True)
     refresh_token: Mapped[str] = mapped_column(nullable=True)
 
     def __repr__(self) -> str:

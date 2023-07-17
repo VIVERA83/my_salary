@@ -4,7 +4,7 @@ import os
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-from base.literals import ALGORITHMS, METHODS, HEADERS
+from auth.utils import ALGORITHMS, METHODS, HEADERS
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
 
@@ -33,7 +33,7 @@ class Log(BaseModel):
     traceback: bool = False
 
 
-class Authorization(BaseModel):
+class Authorization(BaseSettings):
     """Authorization settings."""
 
     key: str
@@ -47,6 +47,14 @@ class Authorization(BaseModel):
     allow_headers: list[HEADERS]
     allow_credentials: bool
 
+    class Config:
+        """Настройки для чтения переменных окружения из файла."""
+
+        env_nested_delimiter = "__"
+        env_file = BASE_DIR + "/.env_local"
+        enf_file_encoding = "utf-8"
+        extra = "ignore"
+
 
 class Settings(BaseSettings):
     """Объединяющий класс, в котором собраны настройки приложения."""
@@ -54,17 +62,19 @@ class Settings(BaseSettings):
     name: str
     host: str
     port: int
+    uvicorn_workers: int = 1
     postgres: Postgres
     logging: Log
-    auth: Authorization
+
+    # auth: Authorization
 
     class Config:
         """Настройки для чтения переменных окружения из файла."""
 
         env_nested_delimiter = "__"
-        env_file = BASE_DIR + "/.env"
+        env_file = BASE_DIR + "/.env_local"
         enf_file_encoding = "utf-8"
-        extra = "allow"
+        extra = "ignore"
 
     @property
     def base_url(self) -> str:
