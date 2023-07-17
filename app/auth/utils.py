@@ -12,6 +12,7 @@ METHODS = Literal[
     "DELETE",
     "PATCH",
     "PUT",
+    "*",
 ]
 HEADERS = Literal[
     "Accept-Encoding",
@@ -20,4 +21,5 @@ HEADERS = Literal[
     "Access-Control-Allow-Headers",
     "Access-Control-Allow-Origin",
     "Authorization",
+    "*",
 ]
