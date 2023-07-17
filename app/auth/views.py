@@ -139,7 +139,7 @@ async def refresh(request: 'Request', response: Response) -> Any:
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    refresh_token = request.app.store.auth.get_refresh_token(request)
+    refresh_token = request.cookies.get('refresh_token_cookie', "error_token")
     user_id = TokenSchema(refresh_token).payload.user_id.hex
     is_correct = await request.app.store.auth.compare_refresh_token(
         user_id=user_id,

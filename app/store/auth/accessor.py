@@ -192,6 +192,9 @@ class AuthAccessor(BaseAccessor):
             smtp = select(UserModel.refresh_token).where(UserModel.id == user_id)
             return refresh_token == (await session.execute(smtp)).scalar()
 
+    def verify_token(self, token: str) -> dict[str, Any]:
+        return json.loads(jws.verify(token, self.settings.key, self.settings.algorithms), )
+
     def connect(self):
         """Configuring the authorization service."""
         self.free_access = [
@@ -206,6 +209,10 @@ class AuthAccessor(BaseAccessor):
             ['admin/*', '*'],
         ]
         self.logger.info('Auth service is running')
+
+    @property
+    def free_paths(self) -> list[list[str]]:
+        return self.free_access
 
     def _custom_openapi(self) -> Dict[str, Any]:
         """Обновления схемы в Openapi.

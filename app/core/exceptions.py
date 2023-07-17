@@ -6,8 +6,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from core import Request, Application
 
 
-
-
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Перехват исключения, с целью вернуть объект с информацией о документации по приложению."""
     return JSONResponse(

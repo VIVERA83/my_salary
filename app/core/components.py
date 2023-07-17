@@ -57,5 +57,4 @@ class CustomState(State):
     """
 
     access_token: Optional['TokenSchema']
-    refresh_token: Optional['TokenSchema']
     user_id: Optional[str] = None
