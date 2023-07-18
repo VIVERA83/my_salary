@@ -4,11 +4,9 @@ x-common-variables: &common-variables
   POSTGRES_DB:
   POSTGRES_USER:
   POSTGRES_PASSWORD:
-  POSTGRES_HOST: ${POSTGRES_HOST-"postgres_my_salary"}
-  POSTGRES_DB_SCHEMA: ${POSTGRES_DB_SCHEMA-"my_salary"}
-  APP_PORT: ${APP_PORT-8004}
-  APP_HOST: ${APP_HOST-"0.0.0.0"}
-  APP_UVICORN_WORKERS: 1
+  POSTGRES_HOST:
+  POSTGRES_DB_SCHEMA:
+
 services:
   my_salary_api:
     restart: always
