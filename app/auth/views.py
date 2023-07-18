@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Response, status, Depends
 from fastapi.security import HTTPBearer
+from icecream import ic
 from sqlalchemy.exc import IntegrityError
 
 from core.components import Request
@@ -55,7 +56,7 @@ async def create_user(
     await request.app.store.auth.update_response(refresh_token, response)
     return UserSchemaOut(
         id=new_user.id,
-        user_name=new_user.app_name,
+        user_name=new_user.name,
         email=new_user.email,
         access_token=access_token,
     )
@@ -139,10 +140,12 @@ async def refresh(request: 'Request', response: Response) -> Any:
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    token = TokenSchema(request.cookies.get('refresh_token_cookie', "error_token"))
-    access_token, refresh_token = await request.app.store.auth.refresh(token.payload.user_id.hex, token.token)
-    await request.app.store.auth.update_response(refresh_token, response)
-    return RefreshSchema(access_token=access_token)
+    token = TokenSchema(request.cookies.get('refresh_token_cookie', "error token"))
+    if await request.app.store.auth.compare_refresh_token(user_id=token.payload.user_id, refresh_token=token.token):
+        access_token, refresh_token = await request.app.store.auth.create_tokens(token.payload.user_id)
+        await request.app.store.auth.update_response(refresh_token, response)
+        return RefreshSchema(access_token=access_token)
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "Refresh token not valid")
 
 
 @auth_route.get(

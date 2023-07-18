@@ -64,11 +64,6 @@ class AuthAccessor(BaseAccessor, Jwt):
             if user:
                 return user[0]
 
-    async def refresh(self, user_id: str, refresh_token: str) -> Optional[list[str]]:
-        """Updating Access Tokens."""
-        if await self.compare_refresh_token(user_id=user_id, refresh_token=refresh_token):
-            return await self.create_tokens(user_id)
-
     async def create_tokens(self, user_id: str) -> list[str]:
         """Token generation: access_token and refresh_token.
 
@@ -125,3 +120,7 @@ class AuthAccessor(BaseAccessor, Jwt):
             )
             await session.execute(query)
             await session.commit()
+
+    async def update_free_access(self):
+        """Updating the free access to endpoints."""
+        self.free_access.append(["logout", "GET"])

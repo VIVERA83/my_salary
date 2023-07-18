@@ -4,11 +4,20 @@ from typing import Optional, Dict, Any
 from fastapi.openapi.utils import get_openapi
 from fastapi_jwt import JwtAccessBearer
 from fastapi import Response
+from icecream import ic
 from jose import jws
 
 from core import Application
 from core.settings import AuthorizationSettings
-from core.utils import METHODS
+METHODS = [
+    "HEAD",
+    "OPTIONS",
+    "GET",
+    "POST",
+    "DELETE",
+    "PATCH",
+    "PUT",
+]
 
 
 class Jwt:
@@ -58,6 +67,7 @@ class Jwt:
 
         for key, path in openapi_schema['paths'].items():
             is_free, free_method = self._is_free(key)
+
             if not is_free:
                 self._add_security(free_method, path)
 
@@ -81,9 +91,10 @@ class Jwt:
             name: str, example: `post`
             path: dict openapi_schema
         """
+
         for method in METHODS:
-            if method != name and path.get(method):
-                path[method]['security'] = [{'HTTPBearer': []}]
+            if method.upper() != name and path.get(method.lower()):
+                path[method.lower()]['security'] = [{'HTTPBearer': []}]
 
     @property
     def free_paths(self) -> list[list[str]]:
