@@ -10,13 +10,11 @@ services:
       dockerfile: dockerfile
     env_file:
       - .env
-    command: uvicorn main:app --host $HOST --port $PORT --workers $UVICORN_WORKERS
-    #    command: bash -c "
-    #      alembic upgrade head
-    #      && uvicorn main:app --host $HOST --port $PORT --workers $UVICORN_WORKERS
-    #      "
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn main:app --host $APP_HOST --port $APP_PORT --workers $UVICORN_WORKERS"
     ports:
-      - ${PORT}:5432
+      - ${APP_PORT}:${APP_PORT}
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,7 +32,8 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - ${POSTGRES__PORT}:5432
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    command: -p ${POSTGRES_PORT}
 
 volumes:
   postgres_volume:
