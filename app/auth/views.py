@@ -142,7 +142,7 @@ async def refresh(request: 'Request', response: Response) -> Any:
     """
     token = TokenSchema(request.cookies.get('refresh_token_cookie', "error token"))
     if await request.app.store.auth.compare_refresh_token(user_id=token.payload.user_id, refresh_token=token.token):
-        access_token, refresh_token = await request.app.store.auth.create_tokens(token.payload.user_id)
+        access_token, refresh_token = await request.app.store.auth.create_tokens(token.payload.user_id.hex)
         await request.app.store.auth.update_response(refresh_token, response)
         return RefreshSchema(access_token=access_token)
     raise HTTPException(status.HTTP_403_FORBIDDEN, "Refresh token not valid")

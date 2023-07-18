@@ -36,9 +36,9 @@ class Settings(Base):
     app_uvicorn_workers: int = 1
 
     secret_key: str
-    allowed_origins: list[str]
-    allow_methods: list[METHODS]
-    allow_headers: list[HEADERS]
+    allowed_origins: list[str] = ["*"]
+    allow_methods: list[METHODS] = ["*"]
+    allow_headers: list[HEADERS] = ["*"]
     allow_credentials: bool
 
     logging: LogSettings
@@ -75,6 +75,6 @@ class AuthorizationSettings(Base):
     """Authorization settings."""
 
     key: str
-    algorithms: list[ALGORITHMS]
+    algorithms: list[ALGORITHMS] = ["HS256"]
     access_expires_delta: int = 120
     refresh_expires_delta: int = 3600

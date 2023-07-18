@@ -1,16 +1,22 @@
 version: "3.9"
-
+x-common-variables: &common-variables
+  POSTGRES_PORT:
+  POSTGRES_DB:
+  POSTGRES_USER:
+  POSTGRES_PASSWORD:
+  POSTGRES_HOST: ${POSTGRES_HOST-"postgres_my_salary"}
+  POSTGRES_DB_SCHEMA: ${POSTGRES_DB_SCHEMA-"my_salary"}
+  APP_PORT: ${APP_PORT-8004}
+  APP_HOST: ${APP_HOST-"0.0.0.0"}
+  APP_UVICORN_WORKERS: 1
 services:
   my_salary_api:
     restart: always
-    environment:
-      - COMPOSE_PROJECT_NAME
     container_name: my_salary_api
     build:
       context: .
-      dockerfile: "docker/dockerfile"
-    env_file:
-      - .env
+      dockerfile: docker/dockerfile
+    environment: *common-variables
     command: >
       sh -c "alembic upgrade head &&
              uvicorn main:app --host $APP_HOST --port $APP_PORT --workers $APP_UVICORN_WORKERS"
@@ -26,8 +32,7 @@ services:
     image: postgres:13-alpine3.15
     volumes:
       - postgres_volume:/var/lib/postgresql/data/
-    env_file:
-      - .env
+    environment: *common-variables
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -V" ]
       interval: 5s
