@@ -42,7 +42,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          file: dockerfile_game_sapper
+          file: docker/dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
   deploy:
