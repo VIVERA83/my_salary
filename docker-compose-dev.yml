@@ -6,6 +6,7 @@ x-common-variables: &common-variables
   POSTGRES_PASSWORD:
   POSTGRES_HOST:
   POSTGRES_DB_SCHEMA:
+  TRACEBACK:
 
 services:
   my_salary_api:

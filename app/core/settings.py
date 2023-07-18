@@ -24,7 +24,7 @@ class LogSettings(BaseModel):
 
     level: str = "INFO"
     guru: bool = True
-    traceback: bool = False
+    traceback: bool = True
 
 
 class Settings(Base):
