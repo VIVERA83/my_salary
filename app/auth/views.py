@@ -139,28 +139,10 @@ async def refresh(request: 'Request', response: Response) -> Any:
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    refresh_token = request.cookies.get('refresh_token_cookie', "error_token")
-    user_id = TokenSchema(refresh_token).payload.user_id.hex
-    is_correct = await request.app.store.auth.compare_refresh_token(
-        user_id=user_id,
-        refresh_token=refresh_token,
-    )
-    if is_correct:
-        (
-            access_token,
-            refresh_token,
-        ) = await request.app.store.auth.refresh(
-            refresh_token,
-        )
-        await request.app.store.auth.update_response(
-            refresh_token,
-            response,
-        )
-        return RefreshSchema(access_token=access_token)
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail='Refresh token not valid',
-    )
+    token = TokenSchema(request.cookies.get('refresh_token_cookie', "error_token"))
+    access_token, refresh_token = await request.app.store.auth.refresh(token.payload.user_id.hex, token.token)
+    await request.app.store.auth.update_response(refresh_token, response)
+    return RefreshSchema(access_token=access_token)
 
 
 @auth_route.get(

@@ -113,6 +113,7 @@ class OkSchema(BaseModel):
 class TokenSchema(BaseModel):
     """Token."""
 
+    token: str
     headers: 'HeadersTokenSchema' = Field(title='header', description='Заголовок')
     payload: 'PayloadTokenSchema' = Field(
         title='payload',
@@ -125,12 +126,13 @@ class TokenSchema(BaseModel):
         Args:
             token: jwt token
         """
+        token = token
         payload_data = json.loads(jws.get_unverified_claims(token))
         payload_data.update(payload_data.pop('subject'))
         payload = PayloadTokenSchema(**payload_data)
         headers = HeadersTokenSchema(**jws.get_unverified_headers(token))
         TokenSchema.model_rebuild()
-        super().__init__(payload=payload, headers=headers)
+        super().__init__(payload=payload, headers=headers, token=token)
 
 
 class RefreshSchema(BaseSchema):
