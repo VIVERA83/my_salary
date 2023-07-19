@@ -58,6 +58,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_SECRET }}
           port: ${{ secrets.VPS_SSH_PORT }}
           script: |
+            ls
             docker stop ${{ github.event.repository.name }}
             docker rm my_salary
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
