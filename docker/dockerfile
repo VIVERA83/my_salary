@@ -13,11 +13,12 @@ ENV SECRET_KEY=""
 ENV KEY=""
 ENV UVICORN_ARGS "main:app --host $APP_HOST --port $APP_PORT --workers $APP_UVICORN_WORKERS"
 
-ENV POSTGRES__DB=""
-ENV POSTGRES__USER=""
-ENV POSTGRES__PASSWORD=""
-ENV POSTGRES__HOST="host.docker.internal"
-ENV POSTGRES__PORT=5432
+ENV POSTGRES_DB=""
+ENV POSTGRES_USER=""
+ENV POSTGRES_PASSWORD=""
+ENV POSTGRES_HOST="host.docker.internal"
+ENV POSTGRES_PORT=5432
+ENV POSTGRES_PORT="my_salary"
 
 RUN pip install --upgrade pip  --no-cache-dir
 RUN pip install "poetry"

@@ -58,8 +58,8 @@ jobs:
           key: ${{ secrets.VPS_SSH_SECRET }}
           port: ${{ secrets.VPS_SSH_PORT }}
           script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
             docker stop ${{ github.event.repository.name }}
             docker rm my_salary
-            docker run --name my_salary -d -p ${{secrets.VPS_PORT}}:${{secrets.VPS_PORT}} -e POSTGRES_DB=${{secrets.POSTGRES_DB}} -e POSTGRES_USER=${{secrets.POSTGRES_USER}} -e POSTGRES_PASSWORD=${{secrets.POSTGRES__PASSWORD}} -e POSTGRES_HOST=${{secrets.POSTGRES_HOST}} -e POSTGRES_DB_SCHEMA=${{secrets.POSTGRES_DB_SCHEMA}} ${{secrets.DOCKERHUB_USERNAME}}/my_salary:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
+            docker run --name my_salary -d -p ${{secrets.VPS_PORT}}:${{secrets.VPS_PORT}} -e POSTGRES_DB=${{secrets.POSTGRES_DB}} -e POSTGRES_USER=${{secrets.POSTGRES_USER}} -e POSTGRES_PASSWORD=${{secrets.POSTGRES__PASSWORD}} ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
             echo "✅Start container my_salary successfully"
