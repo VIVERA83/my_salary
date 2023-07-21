@@ -36,8 +36,7 @@ cd derbit
   примера [.env_example](.env_example)*:__</span>
 
 ```bash
-COMPOSE_PROJECT_NAME="my_salary"
-
+echo "COMPOSE_PROJECT_NAME="my_salary"
 # Настройка настройка логирования
 LOGGING__LEVEL="DEBUG"
 LOGGING__GURU="True"
