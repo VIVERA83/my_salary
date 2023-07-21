@@ -12,43 +12,43 @@ on:
       - "pyproject.toml"
       - "poetry.lock"
 jobs:
-#  build_test:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#      - name: Setup
-#        run: echo "ok"
+  #  build_test:
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - uses: actions/checkout@v3
+  #      - name: Setup
+  #        run: echo "ok"
 
-#  push_to_docker_hub:
-#    runs-on: ubuntu-latest
-#    needs: [ build_test ]
-#
-#    steps:
-#      - name: Checkout repo
-#        uses: actions/checkout@v3
-#
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@v2
-#
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v2
-#
-#      - name: Login to DockerHub
-#        uses: docker/login-action@v2
-#        with:
-#          username: ${{ secrets.DOCKERHUB_USERNAME }}
-#          password: ${{ secrets.DOCKERHUB_TOKEN }}
-#
-#      - name: Build and push
-#        uses: docker/build-push-action@v2
-#        with:
-#          file: docker/dockerfile
-#          push: true
-#          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
+  #  push_to_docker_hub:
+  #    runs-on: ubuntu-latest
+  #    needs: [ build_test ]
+  #
+  #    steps:
+  #      - name: Checkout repo
+  #        uses: actions/checkout@v3
+  #
+  #      - name: Set up QEMU
+  #        uses: docker/setup-qemu-action@v2
+  #
+  #      - name: Set up Docker Buildx
+  #        uses: docker/setup-buildx-action@v2
+  #
+  #      - name: Login to DockerHub
+  #        uses: docker/login-action@v2
+  #        with:
+  #          username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #          password: ${{ secrets.DOCKERHUB_TOKEN }}
+  #
+  #      - name: Build and push
+  #        uses: docker/build-push-action@v2
+  #        with:
+  #          file: docker/dockerfile
+  #          push: true
+  #          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-#    needs: [ push_to_docker_hub ]
+    #    needs: [ push_to_docker_hub ]
 
     steps:
       - uses: actions/checkout@v3
@@ -62,6 +62,19 @@ jobs:
           source: "docker-compose.yml"
           target: ~/test_app
           overwrite: True
+
+      - name: run docker
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd ~/test_app
+            docker-compose down
+            docker-compose up -- build -d
+            docker container prune
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
 
 #          script: |
