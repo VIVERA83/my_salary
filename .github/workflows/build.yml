@@ -53,21 +53,19 @@ jobs:
 
       steps:
         - uses: actions/checkout@v3
-#        - name: Copy files
-#          uses: appleboy/scp-action@v0.1.4
-#          with:
-#            host: ${{ secrets.VPS_SSH_HOST }}
-#            username: ${{ secrets.VPS_SSH_USERNAME }}
-#            port: ${{ secrets.VPS_SSH_PORT }}
-#            key: ${{ secrets.VPS_SSH_SECRET }}
-#            source: "docker-compose.yml"
-#            target: ~/{{ env.APP_NAME }}
-#            overwrite: True
+        - name: Copy files
+          uses: appleboy/scp-action@v0.1.4
+          with:
+            host: ${{ secrets.VPS_SSH_HOST }}
+            username: ${{ secrets.VPS_SSH_USERNAME }}
+            port: ${{ secrets.VPS_SSH_PORT }}
+            key: ${{ secrets.VPS_SSH_SECRET }}
+            source: "docker-compose.yml"
+            target: ~/${{ secrets.APP_NAME }}
+            overwrite: True
 
         - name: run docker
           uses: appleboy/ssh-action@v0.1.10
-          env:
-            APP_NAME : "~/${{ secrets.APP_NAME }}"
           with:
             host: ${{ secrets.HOST }}
             username: ${{ secrets.USERNAME }}
@@ -75,7 +73,7 @@ jobs:
             port: ${{ secrets.PORT }}
             script_stop: True
             script: |
-              cd $APP_NAME
+              cd ~/${{ secrets.APP_NAME }}
               echo "✅ cd /test_app"
               echo "${{ secrets.ENV_FILE }}" > .env
               echo "✅ echo "${{ secrets.ENV_FILE }}" > .env"
