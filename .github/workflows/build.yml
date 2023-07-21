@@ -76,8 +76,8 @@ jobs:
               cd ~/${{ secrets.APP_NAME }}
               echo "${{ secrets.ENV_FILE }}" > .env
               docker compose down
-              docker compose up --build -d
-              docker container prune -a -f
+              docker compose -f docker-compose-dev.yml up -d --build
+              docker container prune -f
               echo "✅"
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
 
