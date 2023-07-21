@@ -4,7 +4,7 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
-      - ".github/workflows/*"
+#      - ".github/workflows/*"
       - "docs/*"
       - ".env*"
       - ".gitignore"
@@ -73,7 +73,7 @@ jobs:
             port: ${{ secrets.PORT }}
             script_stop: True
             script: |
-              cd ~/${{APP_NAME }}
+              cd ~/${{ secrets.APP_NAME }}
               echo "✅ cd /test_app"
               echo "${{ secrets.ENV_FILE }}" > .env
               echo "✅ echo "${{ secrets.ENV_FILE }}" > .env"
