@@ -6,7 +6,7 @@ services:
     environment:
       - COMPOSE_PROJECT_NAME
     container_name: my_salary_api
-    image: vivera83/my_salary
+    image: ${IMAGE_APP_NAME}
     env_file:
       - .env
     command: >
