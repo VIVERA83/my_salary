@@ -26,9 +26,7 @@ jobs:
       steps:
         - name: Checkout repo
           uses: actions/checkout@v3
-          run: | 
-            echo "ok"
-            echo ${ GITHUB_REF:11 }
+          run: echo ${ GITHUB_REF:11 }
 
 #        - name: Set up QEMU
 #          uses: docker/setup-qemu-action@v2
