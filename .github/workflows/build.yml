@@ -12,12 +12,12 @@ on:
       - "pyproject.toml"
       - "poetry.lock"
 jobs:
-  build_test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup
-        run: echo "ok"
+#  build_test:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - name: Setup
+#        run: echo "ok"
 
   push_to_docker_hub:
     runs-on: ubuntu-latest
@@ -54,13 +54,16 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
+          port: ${{ secrets.VPS_SSH_PORT }}
           username: ${{ secrets.VPS_SSH_USERNAME }}
           key: ${{ secrets.VPS_SSH_SECRET }}
-          port: ${{ secrets.VPS_SSH_PORT }}
-          script: |
-            ls
-            docker stop ${{ github.event.repository.name }}
-            docker rm my_salary
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
-            docker run --name my_salary -d -p ${{secrets.VPS_PORT}}:${{secrets.VPS_PORT}} -e POSTGRES_DB=${{secrets.POSTGRES_DB}} -e POSTGRES_USER=${{secrets.POSTGRES_USER}} -e POSTGRES_PASSWORD=${{secrets.POSTGRES__PASSWORD}} ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
-            echo "✅Start container my_salary successfully"
+#          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
+          target: "~/test_app"
+          source: "docker-compose.yml"
+#          script: |
+#            ls
+#            docker stop ${{ github.event.repository.name }}
+#            docker rm my_salary
+#            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
+#            docker run --name my_salary -d -p ${{secrets.VPS_PORT}}:${{secrets.VPS_PORT}} -e POSTGRES_DB=${{secrets.POSTGRES_DB}} -e POSTGRES_USER=${{secrets.POSTGRES_USER}} -e POSTGRES_PASSWORD=${{secrets.POSTGRES__PASSWORD}} ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
+#            echo "✅Start container my_salary successfully"
