@@ -71,25 +71,18 @@ jobs:
             port: ${{ secrets.VPS_SSH_PORT }}
             username: ${{ secrets.VPS_SSH_USERNAME }}
             key: ${{ secrets.VPS_SSH_SECRET }}
-            script: whoami
-#          with:
-#            host: ${{ secrets.HOST }}
-#            username: ${{ secrets.USERNAME }}
-#            password: ${{ secrets.PASSWORD }}
-#            port: ${{ secrets.PORT }}
-#            script_stop: True
-#            script: |
-#              whoami
-#              cd ~/${{ secrets.APP_NAME }}
-#              echo "✅ cd /test_app"
-#              echo "${{ secrets.ENV_FILE }}" > .env
-#              echo "✅ echo "${{ secrets.ENV_FILE }}" > .env"
-#              docker-compose down
-#              echo "✅ docker-compose down"
-#              docker-compose up -- build -d
-#              echo "✅ docker-compose up -- build -d"
-#              docker container prune
-#              echo "✅ docker container prune"
+            script: |
+              whoami
+              cd ~/${{ secrets.APP_NAME }}
+              echo "✅ cd APP_NAME"
+              echo "${{ secrets.ENV_FILE }}" > .env
+              echo "✅ echo "${{ secrets.ENV_FILE }}" > .env"
+              docker-compose down
+              echo "✅ docker-compose down"
+              docker-compose up -- build -d
+              echo "✅ docker-compose up -- build -d"
+              docker container prune
+              echo "✅ docker container prune"
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
 
 #          script: |
