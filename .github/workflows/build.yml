@@ -70,11 +70,16 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
+          script_stop: True
           script: |
             cd ~/test_app
+            echo "✅ cd /test_app"
             docker-compose down
+            echo "✅ docker-compose down"
             docker-compose up -- build -d
+            echo "✅ docker-compose up -- build -d"
             docker container prune
+            echo "✅ docker container prune"
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
 
 #          script: |
