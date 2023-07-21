@@ -44,7 +44,7 @@ jobs:
           with:
             file: docker/dockerfile
             push: true
-            tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:latest
+            tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.APP_NAME }}:latest
 
     deploy:
       name: Deploy
