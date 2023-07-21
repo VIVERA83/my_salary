@@ -46,21 +46,24 @@ jobs:
 #          push: true
 #          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
   deploy:
+    name: Deploy
     runs-on: ubuntu-latest
 #    needs: [ push_to_docker_hub ]
 
     steps:
-      - name: Deploy to VPS
+      - uses: actions/checkout@v3
+      - name: Copy files
         uses: appleboy/ssh-action@v0.1.4
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
-          port: ${{ secrets.VPS_SSH_PORT }}
           username: ${{ secrets.VPS_SSH_USERNAME }}
+          port: ${{ secrets.VPS_SSH_PORT }}
           key: ${{ secrets.VPS_SSH_SECRET }}
+          source: "docker-compose.yml"
+          target: ~/test_app
           script_stop: true
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
-          source: "docker-compose.yml"
-          target: "~/test_app"
+
 #          script: |
 #            ls
 #            docker stop ${{ github.event.repository.name }}
