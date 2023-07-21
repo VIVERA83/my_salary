@@ -74,6 +74,8 @@ jobs:
           script: |
             cd ~/test_app
             echo "✅ cd /test_app"
+            echo "${{ secrets.ENV_FILE }}" > .env
+            echo "✅ echo "${{ secrets.ENV_FILE }}" > .env"
             docker-compose down
             echo "✅ docker-compose down"
             docker-compose up -- build -d
