@@ -57,8 +57,8 @@ jobs:
           uses: appleboy/scp-action@v0.1.4
           with:
             host: ${{ secrets.VPS_SSH_HOST }}
-            username: ${{ secrets.VPS_SSH_USERNAME }}
             port: ${{ secrets.VPS_SSH_PORT }}
+            username: ${{ secrets.VPS_SSH_USERNAME }}
             key: ${{ secrets.VPS_SSH_SECRET }}
             source: "docker-compose.yml"
             target: ~/${{ secrets.APP_NAME }}
@@ -68,8 +68,9 @@ jobs:
           uses: appleboy/ssh-action@v0.1.10
           with:
             host: ${{ secrets.VPS_SSH_HOST }}
-            username: ${{ secrets.VPS_SSH_USERNAME }}
             port: ${{ secrets.VPS_SSH_PORT }}
+            username: ${{ secrets.VPS_SSH_USERNAME }}
+            key: ${{ secrets.VPS_SSH_SECRET }}
             script: whoami
 #          with:
 #            host: ${{ secrets.HOST }}
