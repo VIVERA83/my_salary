@@ -51,7 +51,7 @@ jobs:
 
     steps:
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v0.1.4
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
           port: ${{ secrets.VPS_SSH_PORT }}
@@ -59,7 +59,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_SECRET }}
           script_stop: true
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
-          source: "tests/a.txt,tests/b.txt"
+          source: "docker-compose.yml"
           target: "~/test_app"
 #          script: |
 #            ls
