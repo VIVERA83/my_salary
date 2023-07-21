@@ -74,9 +74,9 @@ jobs:
             script: |
               cd ~/${{ secrets.APP_NAME }}
               echo "${{ secrets.ENV_FILE }}" > .env
-              docker-compose down
-              docker-compose up --build -d
-              docker container prune
+              docker compose down
+              docker compose up --build -d
+              docker container prune -af
               echo "✅"
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
 
