@@ -60,7 +60,7 @@ jobs:
             port: ${{ secrets.VPS_SSH_PORT }}
             username: ${{ secrets.VPS_SSH_USERNAME }}
             key: ${{ secrets.VPS_SSH_SECRET }}
-            source: "docker-compose.yml"
+            source: "docker/docker-compose-dev.yml"
             target: ~/${{ secrets.APP_NAME }}
             overwrite: True
 
