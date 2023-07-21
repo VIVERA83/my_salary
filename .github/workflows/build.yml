@@ -61,7 +61,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_SECRET }}
           source: "docker-compose.yml"
           target: ~/test_app
-          script_stop: true
+          overwrite: True
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
 
 #          script: |
