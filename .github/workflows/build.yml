@@ -63,6 +63,7 @@ jobs:
             source: "docker/docker-compose-dev.yml"
             target: ~/${{ secrets.APP_NAME }}
             overwrite: True
+            strip_components: 1
 
         - name: run docker
           uses: appleboy/ssh-action@v0.1.10
@@ -76,7 +77,7 @@ jobs:
               echo "${{ secrets.ENV_FILE }}" > .env
               docker compose down
               docker compose up --build -d
-              docker container prune -af
+              docker container prune -a -f
               echo "✅"
 #          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
 
