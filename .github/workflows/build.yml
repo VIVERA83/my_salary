@@ -19,8 +19,8 @@ jobs:
   #      - name: Setup
   #        run: echo "ok"
 
-    push_to_docker_hub:
-      runs-on: ubuntu-latest
+#    push_to_docker_hub:
+#      runs-on: ubuntu-latest
 #      needs: [ build_test ]
 
 #      steps:
