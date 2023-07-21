@@ -44,7 +44,7 @@ jobs:
           with:
             file: docker/dockerfile
             push: true
-            tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.APP_NAME }}:${{ GITHUB_REF:11 }}
+            tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.APP_NAME }}:${ GITHUB_REF:10 }
 #  deploy:
 #    name: Deploy
 #    runs-on: ubuntu-latest
