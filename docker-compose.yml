@@ -37,6 +37,8 @@ services:
       - ${POSTGRES_PORT}:${POSTGRES_PORT}
     command: -p ${POSTGRES_PORT}
 
+
+
 volumes:
   postgres_volume:
 

@@ -2,7 +2,7 @@ name: Build
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: [ master, draft ]
     paths-ignore:
       - ".github/workflows/*"
       - "docs/*"
@@ -12,59 +12,70 @@ on:
       - "pyproject.toml"
       - "poetry.lock"
 jobs:
-#  build_test:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#      - name: Setup
-#        run: echo "ok"
-
-#  push_to_docker_hub:
-#    runs-on: ubuntu-latest
-#    needs: [ build_test ]
-#
-#    steps:
-#      - name: Checkout repo
-#        uses: actions/checkout@v3
-#
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@v2
-#
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v2
-#
-#      - name: Login to DockerHub
-#        uses: docker/login-action@v2
-#        with:
-#          username: ${{ secrets.DOCKERHUB_USERNAME }}
-#          password: ${{ secrets.DOCKERHUB_TOKEN }}
-#
-#      - name: Build and push
-#        uses: docker/build-push-action@v2
-#        with:
-#          file: docker/dockerfile
-#          push: true
-#          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
-  deploy:
+  build_test:
     runs-on: ubuntu-latest
-#     needs: [ push_to_docker_hub ]
-
     steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@master
+      - uses: actions/checkout@v3
+      - name: Setup
+        run: echo "ok"
+  
+  push_to_docker_hub:
+    runs-on: ubuntu-latest
+    needs: [ build_test ]
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          file: docker/dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
+  
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [ push_to_docker_hub ]
+    
+    steps:
+      - uses: actions/checkout@v3
+      - name: Copy files
+        uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
           port: ${{ secrets.VPS_SSH_PORT }}
           username: ${{ secrets.VPS_SSH_USERNAME }}
           key: ${{ secrets.VPS_SSH_SECRET }}
-          script_stop: true
-#          путь основан на каталоге, в котором запускается пользователь, вошедший в систему на сервере
-          source: "docker-compose.yml"
-          target: "~/test_app"
-#          script: |
-#            ls
-#            docker stop ${{ github.event.repository.name }}
-#            docker rm my_salary
-#            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
-#            docker run --name my_salary -d -p ${{secrets.VPS_PORT}}:${{secrets.VPS_PORT}} -e POSTGRES_DB=${{secrets.POSTGRES_DB}} -e POSTGRES_USER=${{secrets.POSTGRES_USER}} -e POSTGRES_PASSWORD=${{secrets.POSTGRES__PASSWORD}} ${{ secrets.DOCKERHUB_USERNAME }}/my_salary:latest
-#            echo "✅Start container my_salary successfully"
+          source: "docker/docker-compose-dev.yml"
+          target: ~/${{ secrets.APP_NAME }}
+          overwrite: True
+          strip_components: 1
+
+      - name: run docker
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_SSH_HOST }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          username: ${{ secrets.VPS_SSH_USERNAME }}
+          key: ${{ secrets.VPS_SSH_SECRET }}
+          script: |
+            cd ~/${{ secrets.APP_NAME }}
+            echo "${{ secrets.ENV_FILE }}" > .env
+            docker compose down
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
+            docker compose -f docker-compose-dev.yml up -d --build
+            docker container prune -f
