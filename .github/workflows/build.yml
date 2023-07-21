@@ -73,7 +73,7 @@ jobs:
             port: ${{ secrets.PORT }}
             script_stop: True
             script: |
-              cd ~/${{env.APP_NAME }}
+              cd ~/${{APP_NAME }}
               echo "✅ cd /test_app"
               echo "${{ secrets.ENV_FILE }}" > .env
               echo "✅ echo "${{ secrets.ENV_FILE }}" > .env"
