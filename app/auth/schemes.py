@@ -5,7 +5,7 @@ from hashlib import sha256
 from uuid import UUID
 
 from jose import jws
-from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
+from pydantic import BaseModel, Field, EmailStr, SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
 
@@ -16,12 +16,13 @@ class BaseSchema(BaseModel):
         """Config."""
 
         from_attributes = True
+        exclude = True
 
 
 class BaseUserSchema(BaseSchema):
     """Base User Schema."""
 
-    user_name: str = Field(title='Имя пользователя', example='Василий Алибабаевич')
+    name: str = Field(title='Имя пользователя', example='Василий Алибабаевич')
     email: EmailStr = Field(title='email адрес пользователя, уникальный элемент')
 
 
@@ -79,6 +80,11 @@ class UserSchemaOut(BaseUserSchema):
     )
     access_token: str = Field(title='Токен доступа')
 
+    class Config:
+        """Config."""
+
+        from_attributes = True
+        exclude = True
 
 class UserSchemaLogin(BaseModel):
     """User authorization schemer."""

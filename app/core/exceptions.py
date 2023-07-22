@@ -3,7 +3,7 @@
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from core import Request, Application
+from core.components import Request, Application
 
 
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -12,7 +12,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={
             "detail": f"{exc.detail}.",
             "message": f"See the documentation: "
-                       f"http://{request.app.settings.app_host}:{request.app.settings.app_port}{request.app.docs_url}",
+                       f"http://{request.app.settings.server_host}:{request.app.settings.app_port}{request.app.docs_url}",
         },
         status_code=exc.status_code,
     )

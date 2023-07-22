@@ -1,19 +1,14 @@
 from typing import Optional
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import insert, select, update, and_
 
-from base import BaseAccessor
+from base.base_accessor import BaseAccessor
 
 from store.auth.models import UserModel as UserModel
-from store.auth.jwt import Jwt
 
 
-class AuthAccessor(BaseAccessor, Jwt):
+class AuthAccessor(BaseAccessor):
     """Authorization service."""
-
-    def _init(self):
-        self.init()
-        self.logger.info('Auth service is running')
 
     async def create_user(
             self,
@@ -61,56 +56,16 @@ class AuthAccessor(BaseAccessor, Jwt):
         async with self.app.database.session.begin().session as session:
             smtp = select(UserModel).where(UserModel.email == email)
             user = (await session.execute(smtp)).unique().fetchone()
-            if user:
-                return user[0]
+            return user[0]
 
-    async def create_tokens(self, user_id: str) -> list[str]:
-        """Token generation: access_token and refresh_token.
-
-        Args:
-            user_id: user identifier
-
-        Returns:
-            object: list of tokens
-        """
-        subject = {'user_id': user_id}
-        access_token = self.access_security.create_access_token(
-            subject,
-        )
-        refresh_token = self.access_security.create_refresh_token(
-            subject,
-        )
-        await self.update_refresh_token(user_id, refresh_token)
-        return [access_token, refresh_token]
-
-    async def compare_refresh_token(self, user_id: str, refresh_token: str) -> bool:
-        """Token Comparison.
-
-        The sent token is compared with the token from the database.
-        True if the token is equal to the value from the token database.
-
-        Args:
-            user_id: User_id whose token is being compared with the standard from DB.
-            refresh_token: The refresh token.
-
-        Returns:
-            object: True if the token is equal to the value from the refresh token.
-        """
+    async def get_user_by_id_and_refresh_token(self, user_id: str, refresh_token: str) -> Optional[UserModel]:
+        """Get a user by id."""
         async with self.app.database.session.begin().session as session:
-            smtp = select(UserModel.refresh_token).where(UserModel.id == user_id)
-            return refresh_token == (await session.execute(smtp)).scalar()
+            smtp = select(UserModel).where(and_(UserModel.id == user_id, UserModel.refresh_token == refresh_token))
+            user = (await session.execute(smtp)).unique().fetchone()
+            return user[0]
 
-    async def update_refresh_token(
-            self,
-            user_id: str,
-            refresh_token: Optional[str] = None,
-    ):
-        """Updating the refresh token in the user account.
-
-        Args:
-            user_id: The ID of the user in the database
-            refresh_token: The refresh token
-        """
+    async def add_refresh_token_to_user(self, user_id: str, refresh_token: str = None):
         async with self.app.database.session.begin().session as session:
             query = (
                 update(UserModel)
@@ -121,6 +76,3 @@ class AuthAccessor(BaseAccessor, Jwt):
             await session.execute(query)
             await session.commit()
 
-    async def update_free_access(self):
-        """Updating the free access to endpoints."""
-        self.free_access.append(["logout", "GET"])

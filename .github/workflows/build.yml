@@ -2,7 +2,7 @@ name: Build
 on:
   workflow_dispatch:
   push:
-    branches: [ master, draft ]
+    branches: [ master ]
     paths-ignore:
       - ".github/workflows/*"
       - "docs/*"
@@ -79,3 +79,4 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
             docker compose -f docker-compose-dev.yml up -d --build
             docker container prune -f
+

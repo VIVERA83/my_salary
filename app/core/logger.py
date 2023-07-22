@@ -4,7 +4,7 @@ import sys
 
 from loguru import logger
 
-from core import Application
+from core.components import Application
 from core.settings import Settings
 
 

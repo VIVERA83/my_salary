@@ -1,4 +1,5 @@
 """Database..."""
+from dataclasses import asdict
 from typing import Optional, Type
 from uuid import uuid4
 
@@ -7,7 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from base import BaseAccessor
+from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
 
 
@@ -21,7 +22,7 @@ class Base(DeclarativeBase):
         schema=PostgresSettings().postgres_db_schema,
         quote_schema=True,
     )
-    id: Mapped[uuid4] = mapped_column(
+    id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
@@ -39,6 +40,9 @@ class Base(DeclarativeBase):
         )
 
     __str__ = __repr__
+
+    def as_dict(self) -> dict:
+        return asdict(self)  # noqa
 
 
 class Database(BaseAccessor):
@@ -62,10 +66,12 @@ class Database(BaseAccessor):
             future=True,
         )
         self.session = AsyncSession(self._engine, expire_on_commit=False)
+        assert self.logger is not None
         self.logger.info('Connected to Postgres')
 
     async def disconnect(self):
         """Closing the connection to the database."""
         if self._engine:
             await self._engine.dispose()
+        assert self.logger is not None
         self.logger.info('Disconnected from Postgres')

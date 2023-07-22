@@ -1,26 +1,27 @@
 """A module describing services for working with data."""
-from typing import TYPE_CHECKING
 
 from store.database.database import Database
-
-if TYPE_CHECKING:
-    from core import Application
+from store.auth.accessor import AuthAccessor
+from store.jwt.jwt import JWTAccessor
+from store.auth_manager.manager import AuthManager
 
 
 class Store:
     """Store, data service and working with it."""
 
-    def __init__(self, app: "Application"):
+    def __init__(self, app):
         """Initializing data sources.
 
         Args:
             app: The application
         """
-        from store.auth.accessor import AuthAccessor
+
         self.auth = AuthAccessor(app)
+        self.jwt = JWTAccessor(app)
+        self.auth_manager = AuthManager(app)
 
 
-def setup_store(app: "Application"):
+def setup_store(app):
     """Configuring the connection and disconnection of storage.
 
     Here we inform the application about the databases of the database and other

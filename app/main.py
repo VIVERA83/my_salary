@@ -2,13 +2,11 @@
 import uvicorn
 
 from core.settings import Settings
-from core.app import setup_app
 
-app = setup_app()
 if __name__ == "__main__":
     settings = Settings()
-    uvicorn.run(app=setup_app(),
+    uvicorn.run(app="core.app:app",
                 host=settings.app_host,
                 port=settings.app_port,
-                workers=1,
+                workers=settings.app_uvicorn_workers,
                 )
