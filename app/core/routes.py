@@ -1,6 +1,6 @@
 """"Routes приложения """
 
-from core import Application
+from core.components import Application
 from auth.views import auth_route
 
 

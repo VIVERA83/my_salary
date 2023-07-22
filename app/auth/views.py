@@ -5,7 +5,6 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Response, status, Depends
 from fastapi.security import HTTPBearer
 from icecream import ic
-from sqlalchemy.exc import IntegrityError
 
 from core.components import Request
 from auth.schemes import (
@@ -43,23 +42,8 @@ async def create_user(
     Returns:
         object: UserSchemaOut
     """
-    try:
-        new_user = await request.app.store.auth.create_user(**user.model_dump())
-    except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail='Email {email} is not existing'.format(email=user.email),
-        )
-    access_token, refresh_token = await request.app.store.auth.create_tokens(
-        new_user.id.hex,
-    )
-    await request.app.store.auth.update_response(refresh_token, response)
-    return UserSchemaOut(
-        id=new_user.id,
-        user_name=new_user.name,
-        email=new_user.email,
-        access_token=access_token,
-    )
+    user_data = await request.app.store.auth_manager.create_user(response, **user.model_dump())
+    return UserSchemaOut(**user_data)
 
 
 @auth_route.post(
@@ -81,22 +65,7 @@ async def login(request: 'Request', response: Response, user: UserSchemaLogin) -
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    if user_db := await request.app.store.auth.get_user_by_email(user.email):
-        if user_db.password == user.password:
-            access_token, refresh_token = await request.app.store.auth.create_tokens(
-                user_db.id.hex,
-            )
-            await request.app.store.auth.update_response(refresh_token, response)
-            return UserSchemaOut(
-                id=user_db.id,
-                user_name=user_db.name,
-                email=user_db.email,
-                access_token=access_token,
-            )
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail='The user or password is incorrect',
-    )
+    return await request.app.store.auth_manager.login(response, **user.model_dump())
 
 
 @auth_route.get(
@@ -117,9 +86,7 @@ async def logout(request: 'Request', response: Response) -> Any:
     Returns:
         object: OkSchema
     """
-    request.session.clear()
-    response.set_cookie(key="refresh_token_cookie", value="", httponly=True, max_age=-1)
-    await request.app.store.auth.update_refresh_token(request.state.user_id)
+    await request.app.store.auth_manager.logout(response, request.state.user_id)
     return OkSchema()
 
 
@@ -140,12 +107,7 @@ async def refresh(request: 'Request', response: Response) -> Any:
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    token = TokenSchema(request.cookies.get('refresh_token_cookie', "error token"))
-    if await request.app.store.auth.compare_refresh_token(user_id=token.payload.user_id, refresh_token=token.token):
-        access_token, refresh_token = await request.app.store.auth.create_tokens(token.payload.user_id.hex)
-        await request.app.store.auth.update_response(refresh_token, response)
-        return RefreshSchema(access_token=access_token)
-    raise HTTPException(status.HTTP_403_FORBIDDEN, "Refresh token not valid")
+    return await request.app.store.auth_manager.refresh(request, response)
 
 
 @auth_route.get(
