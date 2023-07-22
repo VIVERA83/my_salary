@@ -36,6 +36,7 @@ class Settings(Base):
     app_host: str = "localhost"
     app_port: int = 8004
     app_uvicorn_workers: int = 1
+    server_host: str = "0.0.0.0"
 
     secret_key: str = "secret_key"
     allowed_origins: str | list[str] = "*"
