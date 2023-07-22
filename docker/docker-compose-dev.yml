@@ -11,7 +11,7 @@ services:
       - .env
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn main:app --host $APP_HOST --port $APP_PORT --workers $APP_UVICORN_WORKERS"
+             uvicorn core.app:app --host $APP_HOST --port $APP_PORT --workers $APP_UVICORN_WORKERS"
     ports:
       - ${APP_PORT}:${APP_PORT}
     depends_on:
