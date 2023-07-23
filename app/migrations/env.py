@@ -6,7 +6,7 @@ from core.settings import PostgresSettings
 from sqlalchemy import pool, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from store.database.database import Base
+from store.database.postgres import Base
 
 config = context.config
 settings = PostgresSettings()

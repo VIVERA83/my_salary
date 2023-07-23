@@ -1,7 +1,7 @@
 """"Routes приложения """
 
-from core.components import Application
 from auth.views import auth_route
+from core.components import Application
 
 
 def setup_routes(app: Application):

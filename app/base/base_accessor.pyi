@@ -3,7 +3,6 @@ from typing import Optional
 
 from core.components import Application
 
-
 class BaseAccessor:
     logger: Optional[Logger]
     app: Optional[Application]

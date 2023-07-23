@@ -1,10 +1,10 @@
 from datetime import timedelta
 
-from fastapi_jwt import JwtAccessBearer
-from fastapi import Response
-
 from base.base_accessor import BaseAccessor
 from core.settings import AuthorizationSettings
+from fastapi import Response
+from fastapi_jwt import JwtAccessBearer
+from icecream import ic
 
 
 class JWTAccessor(BaseAccessor):
@@ -20,11 +20,11 @@ class JWTAccessor(BaseAccessor):
 
     def create_access_token(self, user_id: str, ) -> str:
         subject = {"user_id": user_id}
-        return self.access_security.create_access_token(subject, timedelta(self.settings.access_expires_delta))
+        return self.access_security.create_access_token(subject, timedelta(seconds=self.settings.access_expires_delta))
 
     def create_refresh_token(self, user_id: str) -> str:
         subject = {"user_id": user_id}
-        return self.access_security.create_refresh_token(subject, timedelta(self.settings.access_expires_delta))
+        return self.access_security.create_refresh_token(subject, timedelta(seconds=self.settings.access_expires_delta))
 
     def create_tokens(self, user_id: str) -> tuple[str, str]:
         return self.create_access_token(user_id), self.create_refresh_token(user_id)

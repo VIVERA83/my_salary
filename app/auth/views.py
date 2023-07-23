@@ -2,19 +2,13 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Response, status, Depends
-from fastapi.security import HTTPBearer
-from icecream import ic
-
+from auth.schemes import (OkSchema, RefreshSchema,
+                          UserSchemaLogin, UserSchemaOut,
+                          UserSchemaRegistration)
 from core.components import Request
-from auth.schemes import (
-    OkSchema,
-    RefreshSchema,
-    TokenSchema,
-    UserSchemaLogin,
-    UserSchemaOut,
-    UserSchemaRegistration,
-)
+from fastapi import APIRouter, Depends, Response
+from fastapi.security import HTTPBearer
+
 
 auth_route = APIRouter(prefix='/api/v1')
 
@@ -86,7 +80,8 @@ async def logout(request: 'Request', response: Response) -> Any:
     Returns:
         object: OkSchema
     """
-    await request.app.store.auth_manager.logout(response, request.state.user_id)
+    token = request.state.access_token
+    await request.app.store.auth_manager.logout(response, request.state.user_id, token.token, token.payload.exp)
     return OkSchema()
 
 

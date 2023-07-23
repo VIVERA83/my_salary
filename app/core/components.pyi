@@ -1,13 +1,14 @@
 import logging
 from typing import Optional
-from fastapi import Request as FastAPIRequest, FastAPI
 
 from auth.schemes import TokenSchema
 from core.settings import Settings
-
-from store.database.database import Database
+from fastapi import FastAPI
+from fastapi import Request as FastAPIRequest
+from redis.client import Redis
+from store.database.postgres import Postgres
+from store.database.redis import RedisAccessor
 from store.store import Store
-
 
 class Application(FastAPI):
     """Application главный класс.
@@ -15,11 +16,11 @@ class Application(FastAPI):
     Описываем сервисы, которые будут использоваться в приложении.
     Так же это нужно для корректной подсказки IDE.
     """
-    settings: Settings
-    logger: logging
-    database: Database
     store: Store
-
+    settings: Settings
+    redis: RedisAccessor
+    postgres: Postgres
+    logger: logging.Logger
 
 class Request:
     """Переопределения Request.

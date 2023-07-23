@@ -1,11 +1,10 @@
 """Schemas сервиса Авторизации (AUTH)."""
 import json
 from hashlib import sha256
-
 from uuid import UUID
 
 from jose import jws
-from pydantic import BaseModel, Field, EmailStr, SecretStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
 
@@ -85,6 +84,7 @@ class UserSchemaOut(BaseUserSchema):
 
         from_attributes = True
         exclude = True
+
 
 class UserSchemaLogin(BaseModel):
     """User authorization schemer."""

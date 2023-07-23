@@ -16,8 +16,9 @@ class AuthManager(BaseAccessor):
                 return await self._create_tokens_update_response(response, user)
         raise ValueError("The user or password is incorrect")
 
-    async def logout(self, response: Response, user_id: str):
+    async def logout(self, response: Response, user_id: str, token: str, expire: int):
         self.app.store.jwt.unset_refresh_token_cookie(response)
+        await self.app.store.invalid_token.set_token(token, user_id, expire + 5)
         await self.app.store.auth.add_refresh_token_to_user(user_id)
 
     async def refresh(self, request, response: Response):
