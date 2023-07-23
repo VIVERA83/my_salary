@@ -3,13 +3,13 @@ from dataclasses import asdict
 from typing import Optional, Type
 from uuid import uuid4
 
-from sqlalchemy import MetaData
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
 from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
+from sqlalchemy import MetaData
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    create_async_engine)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
@@ -45,7 +45,7 @@ class Base(DeclarativeBase):
         return asdict(self)  # noqa
 
 
-class Database(BaseAccessor):
+class Postgres(BaseAccessor):
     """Description of the rules for connecting.
 
     PostgreSQL to the Fast-Api application.
@@ -66,12 +66,10 @@ class Database(BaseAccessor):
             future=True,
         )
         self.session = AsyncSession(self._engine, expire_on_commit=False)
-        assert self.logger is not None
         self.logger.info('Connected to Postgres')
 
     async def disconnect(self):
         """Closing the connection to the database."""
         if self._engine:
             await self._engine.dispose()
-        assert self.logger is not None
         self.logger.info('Disconnected from Postgres')

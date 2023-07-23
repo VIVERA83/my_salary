@@ -1,26 +1,26 @@
 """Middleware приложения."""
-import json
 import re
 import traceback
 from logging import Logger
 
-from fastapi import status, HTTPException
+from core.components import Application
+from core.settings import AuthorizationSettings, Settings
+from core.utils import (HTTP_EXCEPTION, PUBLIC_ACCESS, check_path,
+                        get_access_token, update_request_state,
+                        verification_public_access, verify_token)
+from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from icecream import ic
 from jose import JWSError
 from sqlalchemy.exc import IntegrityError
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.middleware.base import (BaseHTTPMiddleware,
+                                       RequestResponseEndpoint)
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import Response
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.types import ASGIApp
-
-from core.utils import check_path, verification_public_access, verify_token, get_access_token, update_request_state, \
-    PUBLIC_ACCESS
-from core.components import Application
-from core.settings import AuthorizationSettings, Settings
-from core.utils import HTTP_EXCEPTION
+from store.invalid_token.accessor import InvalidTokenAccessor
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
@@ -66,7 +66,8 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 class AuthorizationMiddleware(BaseHTTPMiddleware):
     """Authorization MiddleWare."""
 
-    def __init__(self, app: ASGIApp):
+    def __init__(self, app: ASGIApp, invalid_token: InvalidTokenAccessor):
+        self.invalid_token = invalid_token
         self.settings = AuthorizationSettings()
         self.public_access = PUBLIC_ACCESS
         super().__init__(app)
@@ -92,6 +93,7 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         try:
             if token := get_access_token(request):
+                assert not await self.invalid_token.get_token(token), "Access token is invalid"
                 assert verify_token(token, self.settings.key, self.settings.algorithms)
                 update_request_state(request, token)
                 return await call_next(request)
@@ -101,6 +103,12 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
                 'message': error.detail,
             }
             return JSONResponse(content=content_data, status_code=error.status_code)
+        except AssertionError as error:
+            content_data = {
+                'detail': HTTP_EXCEPTION.get(403, 'Unknown error'),
+                'message': error.args[0],
+            }
+            return JSONResponse(content=content_data, status_code=403)
 
 
 def setup_middleware(app: Application):
@@ -114,7 +122,7 @@ def setup_middleware(app: Application):
         allow_credentials=app.settings.allow_credentials,
     )
     app.add_middleware(ErrorHandlingMiddleware)
-    app.add_middleware(AuthorizationMiddleware, )
+    app.add_middleware(AuthorizationMiddleware, invalid_token=app.store.invalid_token)
 
 
 def get_error_content(message: str) -> tuple[str, str]:

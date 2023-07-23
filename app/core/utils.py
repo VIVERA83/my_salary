@@ -1,15 +1,13 @@
 import json
 from datetime import datetime
-
-from fastapi import HTTPException
-from typing import Optional, Literal, Any
-
-from jose import JWSError, jws
-from starlette import status
-from starlette.routing import Route
-from starlette.requests import Request
+from typing import Literal, Optional
 
 from auth.schemes import TokenSchema
+from fastapi import HTTPException
+from jose import JWSError, jws
+from starlette import status
+from starlette.requests import Request
+from starlette.routing import Route
 
 ALGORITHMS = Literal[
     "HS256",

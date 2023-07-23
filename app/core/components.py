@@ -1,19 +1,19 @@
 """Переназначенные компоненты Fast-Api."""
 import logging
-
-from typing import Optional, Any
-
-from fastapi.openapi.utils import get_openapi
-from icecream import ic
+from typing import Any, Optional
 
 from auth.schemes import TokenSchema
+from core.logger import setup_logging
 from core.settings import Settings
-from fastapi import FastAPI, Request as FastAPIRequest
+from core.utils import METHODS, PUBLIC_ACCESS
+from fastapi import FastAPI
+from fastapi import Request as FastAPIRequest
+from fastapi.openapi.utils import get_openapi
+from redis.client import Redis
 from starlette.datastructures import State
-
-from core.utils import PUBLIC_ACCESS, METHODS
+from store.database.postgres import Postgres
+from store.database.redis import RedisAccessor
 from store.store import Store
-from store.database.database import Database
 
 
 class Application(FastAPI):
@@ -22,14 +22,13 @@ class Application(FastAPI):
     Описываем сервисы, которые будут использоваться в приложении.
     Так же это нужно для корректной подсказки IDE.
     """
+    store: Store
+    settings: Settings
+    redis: RedisAccessor
+    postgres: Postgres
 
     def __init__(self):
         super().__init__()
-
-        self.settings = Settings()
-        self.logger = logging.Logger(__name__)
-        self.database = Database(self)
-        self.store: Store = Store(self)
         self.free_access = PUBLIC_ACCESS
         self.openapi = self._custom_openapi
 

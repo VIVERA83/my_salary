@@ -1,9 +1,9 @@
 """Модуль начальных настроек приложения."""
 import os
+
+from core.utils import ALGORITHMS, HEADERS, METHOD
 from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings
-
-from core.utils import ALGORITHMS, METHOD, HEADERS
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
 
@@ -56,7 +56,7 @@ class Settings(Base):
     @property
     def base_url(self) -> str:
         """Начальный url адрес приложения."""
-        return f"http://{self.app_host}:{self.app_port}"
+        return f"http://{self.server_host}:{self.app_port}"
 
 
 class PostgresSettings(Base):

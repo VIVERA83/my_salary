@@ -1,5 +1,4 @@
 from auth.middleware import setup_middleware
-
 from core.components import Application
 
 

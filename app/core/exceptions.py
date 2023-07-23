@@ -1,9 +1,9 @@
 """Обработчик HTTP исключений"""
 
+from core.components import Application, Request
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from core.components import Request, Application
 
 
 async def http_exception_handler(request: Request, exc: HTTPException):

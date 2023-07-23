@@ -1,12 +1,10 @@
+from dataclasses import asdict, dataclass
 from uuid import uuid4
 
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import String
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from store.database.database import Base
-
-from dataclasses import dataclass, asdict
+from store.database.postgres import Base
 
 
 @dataclass
