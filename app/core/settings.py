@@ -81,6 +81,18 @@ class PostgresSettings(Base):
         )
 
 
+class RedisSettings(Base):
+    redis_db: int = 1
+    redis_host: str = "0.0.0.0"
+    redis_port: int = 6379
+    redis_password: str
+    redis_user: str = "default"
+
+    @property
+    def dsn(self) -> str:
+        return f"redis://{self.redis_user}:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+
+
 class AuthorizationSettings(Base):
     """Authorization settings."""
 
