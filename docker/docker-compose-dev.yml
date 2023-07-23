@@ -35,5 +35,9 @@ services:
       - ${POSTGRES_PORT}:${POSTGRES_PORT}
     command: -p ${POSTGRES_PORT}
 
+  redis:
+    restart: always
+    image: redis/redis-stack:latest
+
 volumes:
   postgres_volume:
