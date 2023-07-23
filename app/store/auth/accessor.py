@@ -73,4 +73,3 @@ class AuthAccessor(BaseAccessor):
             )
             await session.execute(query)
             await session.commit()
-

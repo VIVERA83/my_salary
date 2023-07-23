@@ -1,14 +1,6 @@
-import datetime
-from datetime import timedelta
-
 from auth.schemes import TokenSchema
 from base.base_accessor import BaseAccessor
 from fastapi import Response
-from icecream import ic
-
-
-def timdelta(expire):
-    pass
 
 
 class AuthManager(BaseAccessor):

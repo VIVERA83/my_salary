@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from uuid import uuid4
 
 from sqlalchemy import String
@@ -30,5 +30,3 @@ class UserModel(Base):
             name=self.name,
             email=self.email,
         )
-
-

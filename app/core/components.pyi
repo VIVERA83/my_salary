@@ -20,7 +20,7 @@ class Application(FastAPI):
     settings: Settings
     redis: RedisAccessor
     postgres: Postgres
-
+    logger: logging.Logger
 
 class Request:
     """Переопределения Request.

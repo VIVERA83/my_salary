@@ -3,13 +3,11 @@ import logging
 from typing import Any, Optional
 
 from auth.schemes import TokenSchema
-from core.logger import setup_logging
 from core.settings import Settings
 from core.utils import METHODS, PUBLIC_ACCESS
 from fastapi import FastAPI
 from fastapi import Request as FastAPIRequest
 from fastapi.openapi.utils import get_openapi
-from redis.client import Redis
 from starlette.datastructures import State
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
@@ -22,10 +20,11 @@ class Application(FastAPI):
     Описываем сервисы, которые будут использоваться в приложении.
     Так же это нужно для корректной подсказки IDE.
     """
-    store: Store
     settings: Settings
+    store: Store
     redis: RedisAccessor
     postgres: Postgres
+    logger: logging.Logger
 
     def __init__(self):
         super().__init__()

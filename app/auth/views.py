@@ -2,13 +2,13 @@
 
 from typing import Any
 
-from auth.schemes import (OkSchema, RefreshSchema, TokenSchema,
+from auth.schemes import (OkSchema, RefreshSchema,
                           UserSchemaLogin, UserSchemaOut,
                           UserSchemaRegistration)
 from core.components import Request
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
-from icecream import ic
+
 
 auth_route = APIRouter(prefix='/api/v1')
 
