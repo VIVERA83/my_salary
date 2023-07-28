@@ -16,6 +16,7 @@ class Application(FastAPI):
     Описываем сервисы, которые будут использоваться в приложении.
     Так же это нужно для корректной подсказки IDE.
     """
+
     store: Store
     settings: Settings
     redis: RedisAccessor
@@ -30,7 +31,7 @@ class Request:
     app: Optional["Application"] = None
     user_id: Optional[str] = None
     token: Optional[str] = None
-    _state: Optional['CustomState'] = None
+    _state: Optional["CustomState"] = None
 
     @property
     def state(self) -> "CustomState":
@@ -41,12 +42,11 @@ class Request:
         """
         return self._state
 
-
 class CustomState:
     """Переопределения State.
 
     Для корректной подсказки IDE по методам `Request`.
     """
 
-    access_token: Optional['TokenSchema']
+    access_token: Optional["TokenSchema"]
     user_id: Optional[str] = None

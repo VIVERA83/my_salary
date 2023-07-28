@@ -40,6 +40,8 @@ services:
   redis:
     restart: always
     image: redis/redis-stack:latest
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
 
 volumes:
   postgres_volume:

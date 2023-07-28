@@ -11,8 +11,12 @@ from store.database.postgres import Base
 class UserModel(Base):
     """User sqlalchemy model."""
 
-    __tablename__ = 'users'
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4, )
+    __tablename__ = "users"
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
     name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(100), unique=True)
     password: Mapped[str] = mapped_column(String(100))
@@ -25,7 +29,7 @@ class UserModel(Base):
         Returns:
             object: string object
         """
-        return '<User id: {id}, name: {name}, email: {email} >'.format(
+        return "<User id: {id}, name: {name}, email: {email} >".format(
             id=self.id,
             name=self.name,
             email=self.email,

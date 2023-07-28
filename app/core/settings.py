@@ -46,8 +46,8 @@ class Settings(Base):
 
     logging: LogSettings = LogSettings()
 
-    @field_validator('allow_headers', "allowed_origins", "allow_methods")
-    def to_list(cls, data: str | list[METHOD | HEADERS]) -> list[METHOD | HEADERS | str]:
+    @field_validator("allow_headers", "allowed_origins", "allow_methods")
+    def to_list(cls, data: str | list[METHOD | HEADERS]) -> list[METHOD | HEADERS | str]:  # noqa
         """Перевод строки в список."""
         if isinstance(data, str):
             return data.replace(" ", "").split(",")
@@ -77,7 +77,7 @@ class PostgresSettings(Base):
             password=self.postgres_password,
             host=self.postgres_host,
             port=self.postgres_port,
-            db=self.postgres_db
+            db=self.postgres_db,
         )
 
 
@@ -90,7 +90,13 @@ class RedisSettings(Base):
 
     @property
     def dsn(self) -> str:
-        return f"redis://{self.redis_user}:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+        return "redis://{user}:{password}@{host}:{port}/{db}".format(
+            user=self.redis_user,
+            password=self.redis_password,
+            host=self.redis_host,
+            port=self.redis_port,
+            db=self.redis_db,
+        )
 
 
 class AuthorizationSettings(Base):
@@ -102,7 +108,7 @@ class AuthorizationSettings(Base):
     refresh_expires_delta: int = 3600
 
     @field_validator("algorithms")
-    def to_list(cls, data: str | list[ALGORITHMS]) -> list[ALGORITHMS]:
+    def to_list(cls, data: str | list[ALGORITHMS]) -> list[ALGORITHMS]:  # noqa
         """Перевод строки в список."""
         if isinstance(data, str):
             return data.replace(" ", "").split(",")  # noqa

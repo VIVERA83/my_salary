@@ -7,8 +7,7 @@ from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
 from sqlalchemy import MetaData
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -34,7 +33,7 @@ class Base(DeclarativeBase):
         Returns:
             object: new instance name
         """
-        return '{class_name}(id={id})'.format(
+        return "{class_name}(id={id})".format(
             id=self.id,
             class_name=self.__class__.__name__,
         )
@@ -66,10 +65,10 @@ class Postgres(BaseAccessor):
             future=True,
         )
         self.session = AsyncSession(self._engine, expire_on_commit=False)
-        self.logger.info('Connected to Postgres')
+        self.logger.info("Connected to Postgres")
 
     async def disconnect(self):
         """Closing the connection to the database."""
         if self._engine:
             await self._engine.dispose()
-        self.logger.info('Disconnected from Postgres')
+        self.logger.info("Disconnected from Postgres")

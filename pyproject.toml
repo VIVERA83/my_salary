@@ -24,9 +24,16 @@ mypy = "^1.4.1"
 pyright = "^1.1.318"
 redis = "^4.6.0"
 isort = "^5.12.0"
-
-
+flake8 = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+reportGeneralTypeIssues = false
+reportOptionalMemberAccess = false
+reportOptionalSubscript = false
+
+[tool.black]
+line-length = 99

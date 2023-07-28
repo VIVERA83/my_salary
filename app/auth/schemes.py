@@ -21,23 +21,23 @@ class BaseSchema(BaseModel):
 class BaseUserSchema(BaseSchema):
     """Base User Schema."""
 
-    name: str = Field(title='Имя пользователя', example='Василий Алибабаевич')
-    email: EmailStr = Field(title='email адрес пользователя, уникальный элемент')
+    name: str = Field(title="Имя пользователя", example="Василий Алибабаевич")
+    email: EmailStr = Field(title="email адрес пользователя, уникальный элемент")
 
 
 class UserSchemaRegistration(BaseSchema):
     """Schema of the user during registration."""
 
-    name: str = Field(title='Имя', example='Василий')
-    email: EmailStr = Field(title='email адрес пользователя, уникальный элемент.')
-    password: str = Field(title='Пароль', example='password')
+    name: str = Field(title="Имя", example="Василий")
+    email: EmailStr = Field(title="email адрес пользователя, уникальный элемент.")
+    password: str = Field(title="Пароль", example="password")
     password_confirmation: str = Field(
-        title='Пароль, подтверждение ',
-        example='password',
+        title="Пароль, подтверждение ",
+        example="password",
         exclude=True,
     )
 
-    @field_validator('password', 'password_confirmation')
+    @field_validator("password", "password_confirmation")
     def hash_passwords(cls, password: str) -> str:  # noqa
         """Хэшируем пароль.
 
@@ -47,13 +47,13 @@ class UserSchemaRegistration(BaseSchema):
         Returns:
             str:  Hashing password
         """
-        return sha256(password.encode('utf-8')).hexdigest()
+        return sha256(password.encode("utf-8")).hexdigest()
 
-    @field_validator('password_confirmation')
+    @field_validator("password_confirmation")
     def passwords_match(
-            cls,  # noqa
-            password_confirmation: str,
-            values: FieldValidationInfo,
+        cls,  # noqa
+        password_confirmation: str,
+        values: FieldValidationInfo,
     ) -> str:
         """Password comparison.
 
@@ -64,8 +64,8 @@ class UserSchemaRegistration(BaseSchema):
         Returns:
             str: password
         """
-        if password_confirmation != values.data.get('password'):
-            raise ValueError('passwords do not match')
+        if password_confirmation != values.data.get("password"):
+            raise ValueError("passwords do not match")
         return password_confirmation
 
 
@@ -73,11 +73,11 @@ class UserSchemaOut(BaseUserSchema):
     """User schema оut."""
 
     id: UUID = Field(
-        description='уникальный `id` номер пользователя, задается автоматически',
-        title='Id пользователя',
-        example='a17b2315-5bb8-40d3-8d8a-2d48b6c3144e',
+        description="уникальный `id` номер пользователя, задается автоматически",
+        title="Id пользователя",
+        example="a17b2315-5bb8-40d3-8d8a-2d48b6c3144e",
     )
-    access_token: str = Field(title='Токен доступа')
+    access_token: str = Field(title="Токен доступа")
 
     class Config:
         """Config."""
@@ -89,14 +89,14 @@ class UserSchemaOut(BaseUserSchema):
 class UserSchemaLogin(BaseModel):
     """User authorization schemer."""
 
-    email: EmailStr = Field(title='email адрес пользователя, уникальный элемент.')
+    email: EmailStr = Field(title="email адрес пользователя, уникальный элемент.")
     password: SecretStr = Field(
-        title='Пароль',
-        example='password',
-        description='Пароль, который был указан при регистрации пользователя',
+        title="Пароль",
+        example="password",
+        description="Пароль, который был указан при регистрации пользователя",
     )
 
-    @field_validator('password')
+    @field_validator("password")
     def hash_passwords(cls, password: SecretStr) -> str:  # noqa
         """Password hashing.
 
@@ -106,24 +106,24 @@ class UserSchemaLogin(BaseModel):
         Returns:
             str:  Hashing password
         """
-        return sha256(password.get_secret_value().encode('utf-8')).hexdigest()
+        return sha256(password.get_secret_value().encode("utf-8")).hexdigest()
 
 
 class OkSchema(BaseModel):
     """Ok."""
 
-    detail: str = 'OK 200'
-    message: str = 'Successfully'
+    detail: str = "OK 200"
+    message: str = "Successfully"
 
 
 class TokenSchema(BaseModel):
     """Token."""
 
     token: str
-    headers: 'HeadersTokenSchema' = Field(title='header', description='Заголовок')
-    payload: 'PayloadTokenSchema' = Field(
-        title='payload',
-        description='Полезная нагрузка',
+    headers: "HeadersTokenSchema" = Field(title="header", description="Заголовок")
+    payload: "PayloadTokenSchema" = Field(
+        title="payload",
+        description="Полезная нагрузка",
     )
 
     def __init__(self, token: str) -> None:
@@ -134,7 +134,7 @@ class TokenSchema(BaseModel):
         """
         token = token
         payload_data = json.loads(jws.get_unverified_claims(token))
-        payload_data.update(payload_data.pop('subject'))
+        payload_data.update(payload_data.pop("subject"))
         payload = PayloadTokenSchema(**payload_data)
         headers = HeadersTokenSchema(**jws.get_unverified_headers(token))
         TokenSchema.model_rebuild()
@@ -150,8 +150,8 @@ class RefreshSchema(BaseSchema):
 class HeadersTokenSchema(BaseModel):
     """Token header."""
 
-    algorithm: str = Field(alias='alg')
-    type: str = Field(alias='typ')
+    algorithm: str = Field(alias="alg")
+    type: str = Field(alias="typ")
 
 
 class PayloadTokenSchema(BaseModel):
@@ -160,4 +160,4 @@ class PayloadTokenSchema(BaseModel):
     exp: int
     iat: int
     type: str
-    user_id: UUID = Field(title='уникальный идентификатор пользователя')
+    user_id: UUID = Field(title="уникальный идентификатор пользователя")
