@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Optional
 
-from auth.schemes import TokenSchema
+from user.schemes import TokenSchema
 from core.settings import Settings
 from core.utils import METHODS, PUBLIC_ACCESS
 from fastapi import FastAPI

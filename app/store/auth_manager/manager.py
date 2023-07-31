@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from auth.schemes import TokenSchema
+from user.schemes import TokenSchema
 from base.base_accessor import BaseAccessor
 from fastapi import Response, status
 

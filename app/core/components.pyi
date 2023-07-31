@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from auth.schemes import TokenSchema
+from user.schemes import TokenSchema
 from core.settings import Settings
 from fastapi import FastAPI
 from fastapi import Request as FastAPIRequest
