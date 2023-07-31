@@ -1,6 +1,6 @@
 from core.components import Application
 from store.user.accessor import UserAccessor
-from store.auth_manager.manager import AuthManager
+from store.user_manager.manager import AuthManager
 from store.invalid_token.accessor import InvalidTokenAccessor
 from store.jwt.jwt import JWTAccessor
 
