@@ -6,13 +6,12 @@ from datetime import datetime
 from logging import Logger
 from typing import Literal, Optional
 
-from auth.schemes import TokenSchema
+from user.schemes import TokenSchema
 from httpcore import URL
 from jose import JWSError, jws
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from starlette.routing import Route
 
 ALGORITHMS = Literal[
     "HS256",

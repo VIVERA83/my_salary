@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from auth.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
+from user.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
                           UserSchemaOut, UserSchemaRegistration)
 from core.components import Request
 from fastapi import APIRouter, Depends, Response

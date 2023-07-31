@@ -1,6 +1,6 @@
 from typing import Optional
 
-from auth.models import UserModel as UserModel
+from user.models import UserModel as UserModel
 from base.base_accessor import BaseAccessor
 from sqlalchemy import and_, insert, select, update
 
