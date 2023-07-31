@@ -2,21 +2,13 @@
 from logging import Logger
 
 from core.components import Application
-from core.exceptions import CustomIntegrityError
 from core.settings import AuthorizationSettings, Settings
-from core.utils import (
-    PUBLIC_ACCESS,
-    check_path,
-    error_response,
-    get_access_token,
-    update_request_state,
-    verification_public_access,
-    verify_token,
-)
+from core.utils import (PUBLIC_ACCESS, ExceptionHandler, check_path,
+                        get_access_token, update_request_state,
+                        verification_public_access, verify_token)
 from fastapi import status
-from icecream import ic
-from sqlalchemy.exc import IntegrityError
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.middleware.base import (BaseHTTPMiddleware,
+                                       RequestResponseEndpoint)
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
@@ -35,20 +27,12 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Обработка ошибок при исполнении handlers (views)."""
-
         try:
             response = await call_next(request)
             return response
         except Exception as error:
-            ic(error)
-            if isinstance(error, IntegrityError):
-                error = CustomIntegrityError(error)
-
-            return error_response(
-                error,
-                request.url,
-                self.logger,
-                self.settings.logging.traceback,
+            return ExceptionHandler(
+                error, request.url, self.logger, self.settings.logging.traceback
             )
 
 
@@ -87,13 +71,8 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
                 status.HTTP_401_UNAUTHORIZED,
             ]
             verify_token(token, self.settings.key, self.settings.algorithms)
-        except AssertionError as error:
-            return error_response(
-                error,
-                request.url,
-                request.app.logger,
-                request.app.settings.logging.traceback,
-            )
+        except Exception as error:
+            return ExceptionHandler(error, request.url, is_traceback=True)
         update_request_state(request, token)
         return await call_next(request)
 
