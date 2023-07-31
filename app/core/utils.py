@@ -94,7 +94,7 @@ def get_access_token(request: "Request") -> Optional[str]:
 
 
 def check_path(
-    request: "Request",
+        request: "Request",
 ) -> bool:
     """Checking if there is a requested path.
 
@@ -106,8 +106,7 @@ def check_path(
     """
     is_not_fount = True
     for route in request.app.routes:
-        route: Route
-        if route.path == request.url.path:
+        if re.match(route.path_regex, request.url.path):
             if request.method.upper() in route.methods:
                 is_not_fount = False
                 break
@@ -156,10 +155,10 @@ def get_error_content(message: str) -> tuple[str, str]:
 
 
 def error_response(
-    error: Exception,
-    url: URL,
-    logger: Logger = Logger,
-    traceback_: bool = False,
+        error: Exception,
+        url: URL,
+        logger: Logger = Logger,
+        traceback_: bool = False,
 ):
     if isinstance(error.args[0], list):
         message, *status_code = error.args[0]
@@ -185,11 +184,11 @@ class ExceptionHandler:
     exception: Exception
 
     def __new__(
-        cls,
-        exception: Exception,
-        url: URL,
-        logger: Logger = Logger(__name__),
-        is_traceback: bool = False,
+            cls,
+            exception: Exception,
+            url: URL,
+            logger: Logger = Logger(__name__),
+            is_traceback: bool = False,
     ) -> JSONResponse:
         exc = cls.handlers.get(exception.__class__.__name__, cls.handler_unknown_error)(exception)
         return error_response(exc, url, logger, is_traceback)
