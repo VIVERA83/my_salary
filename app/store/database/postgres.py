@@ -7,7 +7,8 @@ from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
 from sqlalchemy import MetaData
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    create_async_engine)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 

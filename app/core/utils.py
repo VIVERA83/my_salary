@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 import traceback
 from datetime import datetime
@@ -46,6 +47,8 @@ PUBLIC_ACCESS = [
     ["api/v1/login", "POST"],
     ["api/v1/refresh", "GET"],
     ["admin/*", "*"],
+    # delete
+    ["api/v1/test", "GET"],
 ]
 
 METHODS = [
@@ -176,3 +179,58 @@ def error_response(
             "{exc}: url={url}, message={error}".format(url=url, error=error, exc=error.__class__)
         )
     return JSONResponse(content=content_data, status_code=status_code)
+
+
+class ExceptionHandler:
+    exception: Exception
+
+    def __new__(
+        cls,
+        exception: Exception,
+        url: URL,
+        logger: Logger = Logger(__name__),
+        is_traceback: bool = False,
+    ) -> JSONResponse:
+        exc = cls.handlers.get(exception.__class__.__name__, cls.handler_unknown_error)(exception)
+        return error_response(exc, url, logger, is_traceback)
+
+    @staticmethod
+    def handler_connection_refused_error(exception: Exception) -> Exception:
+        message = "Failed to connect, try again later..."
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        exception.args = ([message, status_code],)
+        return exception
+
+    @staticmethod
+    def handler_assertion_error(exception: Exception) -> Exception:
+        if isinstance(exception.args[0], list):
+            message, *status_code = exception.args[0]
+            status_code = status_code[0]
+        else:
+            message = exception.args[0]
+            status_code = status.HTTP_400_BAD_REQUEST
+        exception.args = ([message, status_code],)
+        return exception
+
+    @staticmethod
+    def handler_unknown_error(exception: Exception) -> Exception:
+        message = "Unknown error..."
+        status_code = status.HTTP_400_BAD_REQUEST
+        exception.args = ([message, status_code],)
+        logging.Logger("handler_unknown_error").error(str(exception))
+        return exception
+
+    @staticmethod
+    def handler_integrity_error_error(exception: Exception) -> Exception:
+        key, value = get_error_content(exception.args[0])
+        message = f"{key.capitalize()} is already in use, try other {key}, not these `{value}`"
+        status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        exception.args = ([message, status_code],)
+        return exception
+
+    handlers = {
+        "ConnectionRefusedError": handler_connection_refused_error,
+        "AssertionError": handler_assertion_error,
+        "ConnectionError": handler_connection_refused_error,
+        "IntegrityError": handler_integrity_error_error,
+    }

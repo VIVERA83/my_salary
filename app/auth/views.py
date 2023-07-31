@@ -2,15 +2,11 @@
 
 from typing import Any
 
-from auth.schemes import (
-    OkSchema,
-    RefreshSchema,
-    UserSchemaLogin,
-    UserSchemaOut,
-    UserSchemaRegistration,
-)
+from auth.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
+                          UserSchemaOut, UserSchemaRegistration)
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
+from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
 from fastapi.security import HTTPBearer
 
 auth_route = APIRouter(prefix="/api/v1")
@@ -128,3 +124,11 @@ def get_token(
         optional: ok if authorization is valid
     """
     return OkSchema()
+
+
+@auth_route.get(
+    "/test",
+    summary="asdasdasd",
+)
+async def swagger_ui_redirect():
+    return get_swagger_ui_oauth2_redirect_html()
