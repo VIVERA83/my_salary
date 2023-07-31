@@ -5,7 +5,7 @@ from base.base_accessor import BaseAccessor
 from sqlalchemy import and_, insert, select, update
 
 
-class AuthAccessor(BaseAccessor):
+class UserAccessor(BaseAccessor):
     """Authorization service."""
 
     async def create_user(

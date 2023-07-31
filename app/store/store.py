@@ -1,6 +1,6 @@
 """A module describing services for working with data."""
 
-from store.user.accessor import AuthAccessor
+from store.user.accessor import UserAccessor
 from store.auth_manager.manager import AuthManager
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
@@ -18,7 +18,7 @@ class Store:
             app: The application
         """
 
-        self.auth = AuthAccessor(app)
+        self.auth = UserAccessor(app)
         self.jwt = JWTAccessor(app)
         self.auth_manager = AuthManager(app)
         self.invalid_token = InvalidTokenAccessor(app)
