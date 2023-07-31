@@ -1,6 +1,6 @@
 """A module describing services for working with data."""
 
-from store.auth.accessor import AuthAccessor
+from store.user.accessor import AuthAccessor
 from store.auth_manager.manager import AuthManager
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
