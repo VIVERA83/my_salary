@@ -1,5 +1,5 @@
 from core.components import Application
-from store.user.accessor import AuthAccessor
+from store.user.accessor import UserAccessor
 from store.auth_manager.manager import AuthManager
 from store.invalid_token.accessor import InvalidTokenAccessor
 from store.jwt.jwt import JWTAccessor
@@ -14,7 +14,7 @@ class Store:
             app: The application
         """
 
-        self.auth = AuthAccessor(app)
+        self.auth = UserAccessor(app)
         self.jwt = JWTAccessor(app)
         self.auth_manager = AuthManager(app)
         self.invalid_token = InvalidTokenAccessor(app)
