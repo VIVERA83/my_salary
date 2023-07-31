@@ -9,11 +9,11 @@ class AuthAccessor(BaseAccessor):
     """Authorization service."""
 
     async def create_user(
-            self,
-            name: str,
-            email: str,
-            password: str,
-            is_superuser: Optional[bool] = None,
+        self,
+        name: str,
+        email: str,
+        password: str,
+        is_superuser: Optional[bool] = None,
     ) -> Optional[UserModel]:
         """Adding a new user to the database.
 
@@ -53,15 +53,22 @@ class AuthAccessor(BaseAccessor):
         """
         async with self.app.postgres.session.begin().session as session:
             smtp = select(UserModel).where(UserModel.email == email)
-            user = (await session.execute(smtp)).unique().fetchone()
-            return user[0]
+            if user := (await session.execute(smtp)).unique().fetchone():
+                return user[0]
 
-    async def get_user_by_id_and_refresh_token(self, user_id: str, refresh_token: str) -> Optional[UserModel]:
+    async def get_user_by_id_and_refresh_token(
+        self, user_id: str, refresh_token: str
+    ) -> Optional[UserModel]:
         """Get a user by id."""
         async with self.app.postgres.session.begin().session as session:
-            smtp = select(UserModel).where(and_(UserModel.id == user_id, UserModel.refresh_token == refresh_token))
-            user = (await session.execute(smtp)).unique().fetchone()
-            return user[0]
+            smtp = select(UserModel).where(
+                and_(
+                    UserModel.id == user_id,
+                    UserModel.refresh_token == refresh_token,
+                )
+            )
+            if user := (await session.execute(smtp)).unique().fetchone():
+                return user[0]
 
     async def add_refresh_token_to_user(self, user_id: str, refresh_token: str = None):
         async with self.app.postgres.session.begin().session as session:

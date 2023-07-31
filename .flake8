@@ -1,0 +1,25 @@
+[flake8]
+show-source = True
+statistics = False
+doctests = True
+
+# Plugins:
+accept-encodings = utf-8
+max-complexity = 6
+max-line-length = 99
+use_class_attributes_order_strict_mode = True
+max_function_length = 20
+
+# Excluding some directories:
+exclude =
+  .git
+  __pycache__
+  .venv
+  .eggs
+  *.egg
+  dist
+  */tests/*
+  */migrations/*
+
+# Self settings:
+max-imports = 15

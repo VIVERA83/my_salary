@@ -20,6 +20,7 @@ class Application(FastAPI):
     Описываем сервисы, которые будут использоваться в приложении.
     Так же это нужно для корректной подсказки IDE.
     """
+
     settings: Settings
     store: Store
     redis: RedisAccessor
@@ -32,7 +33,6 @@ class Application(FastAPI):
         self.openapi = self._custom_openapi
 
     def _custom_openapi(self) -> dict[str, Any]:
-
         """Обновления схемы в Openapi.
 
         Добавление в закрытые методы HTTPBearer.
@@ -50,7 +50,7 @@ class Application(FastAPI):
             version=self.settings.version,
         )
 
-        for key, path in openapi_schema['paths'].items():
+        for key, path in openapi_schema["paths"].items():
             is_free, free_method = self._is_free(key)
 
             if not is_free:
@@ -75,7 +75,7 @@ class Application(FastAPI):
 
         for method in METHODS:
             if method.upper() != name and path.get(method.lower()):
-                path[method.lower()]['security'] = [{'HTTPBearer': []}]
+                path[method.lower()]["security"] = [{"HTTPBearer": []}]
 
 
 class Request(FastAPIRequest):
@@ -99,5 +99,5 @@ class CustomState(State):
     Для корректной подсказки IDE по методам `Request`.
     """
 
-    access_token: Optional['TokenSchema']
+    access_token: Optional["TokenSchema"]
     user_id: Optional[str] = None

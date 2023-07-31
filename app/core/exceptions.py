@@ -1,5 +1,4 @@
 """Обработчик HTTP исключений"""
-
 from core.components import Application, Request
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
@@ -11,8 +10,12 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         content={
             "detail": f"{exc.detail}.",
-            "message": f"See the documentation: "
-                       f"http://{request.app.settings.server_host}:{request.app.settings.app_port}{request.app.docs_url}",
+            "message": "See the documentation: "
+            + "http://{host}:{port}{uri}".format(
+                host=request.app.settings.server_host,
+                port=request.app.settings.app_port,
+                uri=request.app.docs_url,  # noqa
+            ),
         },
         status_code=exc.status_code,
     )

@@ -2,29 +2,28 @@
 
 from typing import Any
 
-from auth.schemes import (OkSchema, RefreshSchema,
-                          UserSchemaLogin, UserSchemaOut,
-                          UserSchemaRegistration)
+from auth.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
+                          UserSchemaOut, UserSchemaRegistration)
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
+from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
 from fastapi.security import HTTPBearer
 
-
-auth_route = APIRouter(prefix='/api/v1')
+auth_route = APIRouter(prefix="/api/v1")
 
 
 @auth_route.post(
-    '/create_user',
-    summary='Регистрация нового пользователя',
-    description='Регистрация нового пользователя в сервисе.',
-    response_description='Анкетные данные пользователя, кроме секретных данных.',
-    tags=['AUTH'],
+    "/create_user",
+    summary="Регистрация нового пользователя",
+    description="Регистрация нового пользователя в сервисе.",
+    response_description="Анкетные данные пользователя, кроме секретных данных.",
+    tags=["AUTH"],
     response_model=UserSchemaOut,
 )
 async def create_user(
-        request: 'Request',
-        response: Response,
-        user: UserSchemaRegistration,
+    request: "Request",
+    response: Response,
+    user: UserSchemaRegistration,
 ) -> Any:
     """Create new user.
 
@@ -41,14 +40,14 @@ async def create_user(
 
 
 @auth_route.post(
-    '/login',
-    summary='Авторизация',
-    description='Авторизация пользователя в сервисе.',
-    response_description='Анкетные данные пользователя, кроме секретных данных.',
-    tags=['AUTH'],
+    "/login",
+    summary="Авторизация",
+    description="Авторизация пользователя в сервисе.",
+    response_description="Анкетные данные пользователя, кроме секретных данных.",
+    tags=["AUTH"],
     response_model=UserSchemaOut,
 )
-async def login(request: 'Request', response: Response, user: UserSchemaLogin) -> Any:
+async def login(request: "Request", response: Response, user: UserSchemaLogin) -> Any:
     """Login.
 
     Args:
@@ -63,14 +62,14 @@ async def login(request: 'Request', response: Response, user: UserSchemaLogin) -
 
 
 @auth_route.get(
-    '/logout',
-    summary='Выход',
-    description='Выход из системы, что бы снова пользоваться '
-                'сервисом необходимо будет снова авторизоваться.',
-    tags=['AUTH'],
+    "/logout",
+    summary="Выход",
+    description="Выход из системы, что бы снова пользоваться "
+    "сервисом необходимо будет снова авторизоваться.",
+    tags=["AUTH"],
     response_model=OkSchema,
 )
-async def logout(request: 'Request', response: Response) -> Any:
+async def logout(request: "Request", response: Response) -> Any:
     """Logout user.
 
     Args:
@@ -81,18 +80,20 @@ async def logout(request: 'Request', response: Response) -> Any:
         object: OkSchema
     """
     token = request.state.access_token
-    await request.app.store.auth_manager.logout(response, request.state.user_id, token.token, token.payload.exp)
+    await request.app.store.auth_manager.logout(
+        response, request.state.user_id, token.token, token.payload.exp
+    )
     return OkSchema()
 
 
 @auth_route.get(
-    '/refresh',
-    summary='Обновить токен доступа',
-    description='Обновление токенов доступа.',
-    tags=['AUTH'],
+    "/refresh",
+    summary="Обновить токен доступа",
+    description="Обновление токенов доступа.",
+    tags=["AUTH"],
     response_model=RefreshSchema,
 )
-async def refresh(request: 'Request', response: Response) -> Any:
+async def refresh(request: "Request", response: Response) -> Any:
     """Update tokens.
 
     Args:
@@ -107,11 +108,13 @@ async def refresh(request: 'Request', response: Response) -> Any:
 
 @auth_route.get(
     "/token",
-    summary='Проверить токен доступа',
-    tags=['AUTH'],
+    summary="Проверить токен доступа",
+    tags=["AUTH"],
     response_model=OkSchema,
 )
-def get_token(authorization=Depends(HTTPBearer(auto_error=True)), ) -> Any:  # noqa
+def get_token(
+    authorization=Depends(HTTPBearer(auto_error=True)),
+) -> Any:  # noqa
     """Returns Ok.
 
     Args:
@@ -121,3 +124,11 @@ def get_token(authorization=Depends(HTTPBearer(auto_error=True)), ) -> Any:  # n
         optional: ok if authorization is valid
     """
     return OkSchema()
+
+
+@auth_route.get(
+    "/test",
+    summary="asdasdasd",
+)
+async def swagger_ui_redirect():
+    return get_swagger_ui_oauth2_redirect_html()

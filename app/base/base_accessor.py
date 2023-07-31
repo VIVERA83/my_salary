@@ -12,8 +12,8 @@ class BaseAccessor:
         """
         self.app = app
         self.logger = app.logger
-        app.on_event('startup')(self.connect)
-        app.on_event('shutdown')(self.disconnect)
+        app.on_event("startup")(self.connect)
+        app.on_event("shutdown")(self.disconnect)
         self._init()
 
     def _init(self):

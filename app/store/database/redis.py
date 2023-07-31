@@ -2,15 +2,13 @@ from typing import Optional
 
 import redis.asyncio as redis
 from base.base_accessor import BaseAccessor
-from redis.client import Redis
-
 from core.settings import RedisSettings
+from redis.client import Redis
 
 
 class RedisAccessor(BaseAccessor):
     connector: Optional[Redis] = None
     settings: RedisSettings = None
-    redis.Redis()
 
     async def connect(self):
         self.settings = RedisSettings()

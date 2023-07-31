@@ -1,18 +1,12 @@
 """Middleware приложения."""
-import re
-import traceback
 from logging import Logger
 
 from core.components import Application
 from core.settings import AuthorizationSettings, Settings
-from core.utils import (HTTP_EXCEPTION, PUBLIC_ACCESS, check_path,
+from core.utils import (PUBLIC_ACCESS, ExceptionHandler, check_path,
                         get_access_token, update_request_state,
                         verification_public_access, verify_token)
-from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse
-from icecream import ic
-from jose import JWSError
-from sqlalchemy.exc import IntegrityError
+from fastapi import status
 from starlette.middleware.base import (BaseHTTPMiddleware,
                                        RequestResponseEndpoint)
 from starlette.middleware.cors import CORSMiddleware
@@ -31,36 +25,15 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
         self.logger = logger
         self.settings = Settings()
 
-    async def dispatch(
-            self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Обработка ошибок при исполнении handlers (views)."""
         try:
             response = await call_next(request)
             return response
         except Exception as error:
-            if isinstance(error, IntegrityError):
-                key, value = get_error_content(error.args[0])
-                status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-                message = f"{key.capitalize()} is not exactly, please try other {key}, not these `{value}`"
-            elif isinstance(error, JWSError):
-                status_code = status.HTTP_403_FORBIDDEN
-                message = error.args[0]
-            elif isinstance(error, ValueError):
-                status_code = status.HTTP_401_UNAUTHORIZED
-                message = error.args[0]
-            else:
-                status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-                message = "The server is temporarily unavailable try contacting later"
-            if self.settings.logging.traceback:
-                self.logger.error(traceback.format_exc())
-            else:
-                self.logger.error(f"{request.url=}, {error=}")
-        ic(status_code)
-        return JSONResponse(content={
-            "detail": HTTP_EXCEPTION.get(status_code),
-            "message": message,
-        }, status_code=status_code)
+            return ExceptionHandler(
+                error, request.url, self.logger, self.settings.logging.traceback
+            )
 
 
 class AuthorizationMiddleware(BaseHTTPMiddleware):
@@ -73,9 +46,9 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
 
     async def dispatch(
-            self,
-            request: Request,
-            call_next: RequestResponseEndpoint,
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
     ) -> Response | None:
         """Checking access rights to a resource.
 
@@ -92,23 +65,16 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         if check_path(request) or verification_public_access(request, self.public_access):
             return await call_next(request)
         try:
-            if token := get_access_token(request):
-                assert not await self.invalid_token.get_token(token), "Access token is invalid"
-                assert verify_token(token, self.settings.key, self.settings.algorithms)
-                update_request_state(request, token)
-                return await call_next(request)
-        except HTTPException as error:
-            content_data = {
-                'detail': HTTP_EXCEPTION.get(error.status_code, 'Unknown error'),
-                'message': error.detail,
-            }
-            return JSONResponse(content=content_data, status_code=error.status_code)
-        except AssertionError as error:
-            content_data = {
-                'detail': HTTP_EXCEPTION.get(403, 'Unknown error'),
-                'message': error.args[0],
-            }
-            return JSONResponse(content=content_data, status_code=403)
+            token = get_access_token(request)
+            assert not await self.invalid_token.get_token(token), [
+                "Access token is invalid",
+                status.HTTP_401_UNAUTHORIZED,
+            ]
+            verify_token(token, self.settings.key, self.settings.algorithms)
+        except Exception as error:
+            return ExceptionHandler(error, request.url, is_traceback=True)
+        update_request_state(request, token)
+        return await call_next(request)
 
 
 def setup_middleware(app: Application):
@@ -123,8 +89,3 @@ def setup_middleware(app: Application):
     )
     app.add_middleware(ErrorHandlingMiddleware)
     app.add_middleware(AuthorizationMiddleware, invalid_token=app.store.invalid_token)
-
-
-def get_error_content(message: str) -> tuple[str, str]:
-    m = re.findall(r"\(([A-Za-z0-9_@.]+)\)", message)
-    return m[1], m[2]

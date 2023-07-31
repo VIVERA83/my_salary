@@ -19,5 +19,4 @@ class Store:
         self.auth_manager = AuthManager(app)
         self.invalid_token = InvalidTokenAccessor(app)
 
-
 def setup_store(app: Application): ...
