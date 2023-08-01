@@ -1,22 +1,20 @@
 from core.components import Application
-from store.user.accessor import UserAccessor
-from store.user_manager.manager import UserManager
+from store.blog.accessor import BlogAccessor
 from store.cache.accessor import CacheAccessor
 from store.jwt.jwt import JWTAccessor
+from store.user.accessor import UserAccessor
+from store.user_manager.manager import UserManager
+
 
 class Store:
     """Store, data service and working with it."""
+    blog: BlogAccessor
+    auth = UserAccessor
+    jwt = JWTAccessor
+    auth_manager = UserManager
+    invalid_token = CacheAccessor
 
-    def __init__(self, app: Application):
-        """Initializing data sources.
+    def __init__(self, app: Application): ...
 
-        Args:
-            app: The application
-        """
-
-        self.auth = UserAccessor(app)
-        self.jwt = JWTAccessor(app)
-        self.auth_manager = UserManager(app)
-        self.invalid_token = CacheAccessor(app)
 
 def setup_store(app: Application): ...

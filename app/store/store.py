@@ -1,11 +1,11 @@
 """A module describing services for working with data."""
-
-from store.user.accessor import UserAccessor
-from store.user_manager.manager import UserManager
+from store.blog.accessor import BlogAccessor
+from store.cache.accessor import CacheAccessor
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
-from store.cache.accessor import CacheAccessor
 from store.jwt.jwt import JWTAccessor
+from store.user.accessor import UserAccessor
+from store.user_manager.manager import UserManager
 
 
 class Store:
@@ -22,6 +22,7 @@ class Store:
         self.jwt = JWTAccessor(app)
         self.auth_manager = UserManager(app)
         self.invalid_token = CacheAccessor(app)
+        self.blog = BlogAccessor(app)
 
 
 def setup_store(app):
