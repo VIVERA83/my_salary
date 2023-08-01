@@ -35,10 +35,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             return response
         except Exception as error:
             return self.exception_handler(
-                error,
-                request.url,
-                request.app.logger,
-                self.settings.logging.traceback
+                error, request.url, request.app.logger, self.settings.logging.traceback
             )
 
 
@@ -54,9 +51,9 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
 
     async def dispatch(
-            self,
-            request: Request,
-            call_next: RequestResponseEndpoint,
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
     ) -> Response | None:
         """Checking access rights to a resource.
 

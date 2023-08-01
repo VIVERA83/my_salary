@@ -1,12 +1,17 @@
 """Views сервиса по работе с постами (POST)."""
 from typing import Any
 
-from user.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
-                          UserSchemaOut, UserSchemaRegistration)
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
 from fastapi.security import HTTPBearer
+from user.schemes import (
+    OkSchema,
+    RefreshSchema,
+    UserSchemaLogin,
+    UserSchemaOut,
+    UserSchemaRegistration,
+)
 
 post_route = APIRouter(prefix="/post")
 
@@ -20,9 +25,9 @@ post_route = APIRouter(prefix="/post")
     response_model=UserSchemaOut,
 )
 async def create_user(
-        request: "Request",
-        response: Response,
-        user: UserSchemaRegistration,
+    request: "Request",
+    response: Response,
+    user: UserSchemaRegistration,
 ) -> Any:
     """Create new user.
 

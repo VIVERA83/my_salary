@@ -5,9 +5,9 @@ from store.jwt.jwt import JWTAccessor
 from store.user.accessor import UserAccessor
 from store.user_manager.manager import UserManager
 
-
 class Store:
     """Store, data service and working with it."""
+
     blog: BlogAccessor
     auth = UserAccessor
     jwt = JWTAccessor
@@ -15,6 +15,5 @@ class Store:
     invalid_token = CacheAccessor
 
     def __init__(self, app: Application): ...
-
 
 def setup_store(app: Application): ...

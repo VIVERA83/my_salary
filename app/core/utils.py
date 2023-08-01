@@ -94,7 +94,7 @@ def get_access_token(request: "Request") -> Optional[str]:
 
 
 def check_path(
-        request: "Request",
+    request: "Request",
 ) -> bool:
     """Checking if there is a requested path.
 
@@ -155,7 +155,9 @@ def get_error_content(message: str) -> tuple[str, str]:
 
 
 class ExceptionHandler:
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         self.exception = Exception("Unknown error...")
         self.logger = Logger(__name__)
         self.level = logging.WARNING
@@ -164,11 +166,11 @@ class ExceptionHandler:
         self.is_traceback = False
 
     def __call__(
-            self,
-            exception: Exception,
-            url: URL,
-            logger: Logger = None,
-            is_traceback: bool = False,
+        self,
+        exception: Exception,
+        url: URL,
+        logger: Logger = None,
+        is_traceback: bool = False,
     ) -> JSONResponse:
         self.exception = exception
         self.logger = logger
@@ -213,7 +215,9 @@ class ExceptionHandler:
     def handler_integrity_error_error(self) -> (str, int):
         """Обработчик исключения IntegrityError."""
         key, value = get_error_content(self.exception.args[0])
-        self.message = f"{key.capitalize()} is already in use, try other {key}, not these `{value}`"
+        self.message = (
+            f"{key.capitalize()} is already in use, try other {key}, not these `{value}`"
+        )
         self.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
         self.level = logging.INFO
 
@@ -232,11 +236,15 @@ class ExceptionHandler:
             msg = f"url={url}, exception={self.exception.__class__}, message_to_user={self.exception}"
         match self.level:
             case "CRITICAL" | 50:
-                msg = (f" \n_____________\n "
-                       f"WARNING: an error has occurred to which there is no correct response of the application."
-                       f" WE NEED TO RESPOND URGENTLY"
-                       f" \nExceptionHandler:  {str(self.exception)}\n"
-                       f" _____________\n" + traceback.format_exc() if not self.is_traceback else "")
+                msg = (
+                    f" \n_____________\n "
+                    f"WARNING: an error has occurred to which there is no correct response of the application."
+                    f" WE NEED TO RESPOND URGENTLY"
+                    f" \nExceptionHandler:  {str(self.exception)}\n"
+                    f" _____________\n" + traceback.format_exc()
+                    if not self.is_traceback
+                    else ""
+                )
                 self.logger.critical(msg)
             case "ERROR" | 40:
                 self.logger.error(msg)
@@ -251,5 +259,5 @@ class ExceptionHandler:
         "ConnectionRefusedError": handler_connection_to_error,
         "ConnectionError": handler_connection_to_error,
         "IntegrityError": handler_integrity_error_error,
-        "ProgrammingError": handler_connection_to_error
+        "ProgrammingError": handler_connection_to_error,
     }

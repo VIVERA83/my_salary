@@ -52,7 +52,7 @@ class UserManager(BaseAccessor):
         return await self._create_tokens_update_response(response, user)
 
     async def _create_tokens_update_response(
-            self, response: Response, user
+        self, response: Response, user
     ) -> dict[USER_DATA_KEY, Any]:
         """Create tokens update response."""
         access_token, refresh_token = self.app.store.jwt.create_tokens(user.id.hex)

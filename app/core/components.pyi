@@ -33,7 +33,6 @@ class Request(FastAPIRequest):
     token: Optional[str] = None
     _state: Optional["CustomState"] = None
 
-
     @property
     def state(self) -> "CustomState":
         """Для корректной подсказки IDE по методам `Request`.
