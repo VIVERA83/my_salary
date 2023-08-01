@@ -1,8 +1,8 @@
 from typing import Any, Literal
 
-from user.schemes import TokenSchema
 from base.base_accessor import BaseAccessor
 from fastapi import Response, status
+from user.schemes import TokenSchema
 
 USER_DATA_KEY = Literal[
     "name",
@@ -18,6 +18,8 @@ class UserManager(BaseAccessor):
     async def create_user(self, response: Response, **user_data) -> dict[USER_DATA_KEY, Any]:
         """Create a new user and tokens."""
         user = await self.app.store.auth.create_user(**user_data)
+        # TODO Нужно придумать как действовать если не удастся создать вторую запись
+        await self.app.store.blog.create_user(user.id, user.name, user.email)
         return await self._create_tokens_update_response(response, user)
 
     async def login(self, response: Response, **user_data) -> dict[USER_DATA_KEY, Any]:
@@ -50,7 +52,7 @@ class UserManager(BaseAccessor):
         return await self._create_tokens_update_response(response, user)
 
     async def _create_tokens_update_response(
-        self, response: Response, user
+            self, response: Response, user
     ) -> dict[USER_DATA_KEY, Any]:
         """Create tokens update response."""
         access_token, refresh_token = self.app.store.jwt.create_tokens(user.id.hex)
