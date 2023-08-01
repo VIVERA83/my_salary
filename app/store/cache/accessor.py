@@ -1,7 +1,7 @@
 from base.base_accessor import BaseAccessor
 
 
-class InvalidTokenAccessor(BaseAccessor):
+class CacheAccessor(BaseAccessor):
     """Authorization service."""
 
     async def set_token(self, token: str, user_id: str, expires: int):
