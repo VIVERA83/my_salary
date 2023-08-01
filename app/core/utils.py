@@ -117,7 +117,6 @@ def verification_public_access(request: "Request", free_paths: list[str]) -> boo
 
     request_path = "/".join(request.url.path.split("/")[1:])
     for path, method in free_paths:
-        # for path, method in request.app.store.auth.free_paths:
         left, *right = path.split("/")
         if right and "*" in right:
             p_left, *temp = request_path.split("/")
