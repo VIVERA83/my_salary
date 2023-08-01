@@ -1,7 +1,6 @@
 import logging
 from typing import Optional
 
-from user.schemes import TokenSchema
 from core.settings import Settings
 from fastapi import FastAPI
 from fastapi import Request as FastAPIRequest
@@ -9,6 +8,7 @@ from redis.client import Redis
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
 from store.store import Store
+from user.schemes import TokenSchema
 
 class Application(FastAPI):
     """Application главный класс.
@@ -23,7 +23,7 @@ class Application(FastAPI):
     postgres: Postgres
     logger: logging.Logger
 
-class Request:
+class Request(FastAPIRequest):
     """Переопределения Request.
 
     Для корректной подсказки IDE по методам `Application`."""
@@ -32,6 +32,7 @@ class Request:
     user_id: Optional[str] = None
     token: Optional[str] = None
     _state: Optional["CustomState"] = None
+
 
     @property
     def state(self) -> "CustomState":

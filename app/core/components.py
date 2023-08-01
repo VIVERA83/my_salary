@@ -2,7 +2,6 @@
 import logging
 from typing import Any, Optional
 
-from user.schemes import TokenSchema
 from core.settings import Settings
 from core.utils import METHODS, PUBLIC_ACCESS
 from fastapi import FastAPI
@@ -12,6 +11,7 @@ from starlette.datastructures import State
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
 from store.store import Store
+from user.schemes import TokenSchema
 
 
 class Application(FastAPI):
