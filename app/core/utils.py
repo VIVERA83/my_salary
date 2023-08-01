@@ -7,6 +7,7 @@ from logging import Logger
 from typing import Literal, Optional
 
 from httpcore import URL
+from icecream import ic
 from jose import JWSError, jws
 from starlette import status
 from starlette.requests import Request
@@ -149,6 +150,7 @@ def update_request_state(request: "Request", token: str):
 
 def get_error_content(message: str) -> tuple[str, str]:
     m = re.findall(r"\(([A-Za-z0-9_@.]+)\)", message)
+    ic(m, message)
     return m[1], m[2]
 
 
@@ -175,7 +177,6 @@ class ExceptionHandler:
             handler(self)  # noqa
         else:
             self.handler_unknown_error()
-        self.exception.args = ([self.message, self.status_code])
         return self.error_response(url)
 
     def handler_unknown_error(self):
@@ -221,13 +222,6 @@ class ExceptionHandler:
 
         Так же выдает лог сообщение об ошибке.
         """
-        if isinstance(self.exception.args[0], list):
-            self.message, *status_code = self.exception.args[0]
-            self.status_code = status_code[0]
-        else:
-            self.message = self.exception.args[0]
-            self.status_code = status.HTTP_400_BAD_REQUEST
-
         content_data = {
             "detail": HTTP_EXCEPTION.get(self.status_code),
             "message": self.message,
