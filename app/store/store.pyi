@@ -1,7 +1,7 @@
 from core.components import Application
 from store.user.accessor import UserAccessor
-from store.user_manager.manager import AuthManager
-from store.invalid_token.accessor import InvalidTokenAccessor
+from store.user_manager.manager import UserManager
+from store.cache.accessor import CacheAccessor
 from store.jwt.jwt import JWTAccessor
 
 class Store:
@@ -16,7 +16,7 @@ class Store:
 
         self.auth = UserAccessor(app)
         self.jwt = JWTAccessor(app)
-        self.auth_manager = AuthManager(app)
-        self.invalid_token = InvalidTokenAccessor(app)
+        self.auth_manager = UserManager(app)
+        self.invalid_token = CacheAccessor(app)
 
 def setup_store(app: Application): ...

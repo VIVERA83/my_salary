@@ -14,7 +14,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
-from store.invalid_token.accessor import InvalidTokenAccessor
+from store.cache.accessor import CacheAccessor
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
@@ -39,7 +39,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 class AuthorizationMiddleware(BaseHTTPMiddleware):
     """Authorization MiddleWare."""
 
-    def __init__(self, app: ASGIApp, invalid_token: InvalidTokenAccessor):
+    def __init__(self, app: ASGIApp, invalid_token: CacheAccessor):
         self.invalid_token = invalid_token
         self.settings = AuthorizationSettings()
         self.public_access = PUBLIC_ACCESS

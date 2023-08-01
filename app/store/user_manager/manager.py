@@ -14,7 +14,7 @@ USER_DATA_KEY = Literal[
 ]
 
 
-class AuthManager(BaseAccessor):
+class UserManager(BaseAccessor):
     async def create_user(self, response: Response, **user_data) -> dict[USER_DATA_KEY, Any]:
         """Create a new user and tokens."""
         user = await self.app.store.auth.create_user(**user_data)
