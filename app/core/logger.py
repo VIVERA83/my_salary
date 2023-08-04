@@ -12,7 +12,7 @@ def setup_logging(app) -> None:
     В данном случае есть вариант использовать loguru.
     https://github.com/Delgan/loguru
     """
-    settings = Settings().logging
+    settings = Settings().app_logging
     if settings.guru:
         logger.configure(
             **{

@@ -12,7 +12,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "detail": f"{exc.detail}.",
             "message": "See the documentation: "
             + "http://{host}:{port}{uri}".format(
-                host=request.app.settings.server_host,
+                host=request.app.settings.app_server_host,
                 port=request.app.settings.app_port,
                 uri=request.app.docs_url,  # noqa
             ),

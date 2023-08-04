@@ -45,9 +45,9 @@ class Application(FastAPI):
             return self.openapi_schema
         openapi_schema = get_openapi(
             title=self.settings.app_name,
-            description=self.settings.description,
+            description=self.settings.app_description,
             routes=self.routes,
-            version=self.settings.version,
+            version=self.settings.app_version,
         )
 
         for key, path in openapi_schema["paths"].items():

@@ -13,7 +13,7 @@ class Base(BaseSettings):
         """Настройки для чтения переменных окружения из файла."""
 
         env_nested_delimiter = "__"
-        env_file = BASE_DIR + "/.env_local"
+        env_file = BASE_DIR + "/.env"
         enf_file_encoding = "utf-8"
         extra = "ignore"
 
@@ -30,23 +30,23 @@ class Settings(Base):
     """Объединяющий класс, в котором собраны настройки приложения."""
 
     app_name: str = "My_salary"
-    description: str = "Сервис проверки авторизации на тему узнай свою заплату"
-    version: str = "beta"
+    app_description: str = "Сервис проверки авторизации на тему узнай свою заплату"
+    app_version: str = "beta"
 
     app_host: str = "localhost"
     app_port: int = 8004
     app_uvicorn_workers: int = 1
-    server_host: str = "0.0.0.0"
+    app_server_host: str = "0.0.0.0"
 
-    secret_key: str = "secret_key"
-    allowed_origins: str | list[str] = "*"
-    allow_methods: str | list[METHOD] = "*"
-    allow_headers: str | list[HEADERS] = "*"
-    allow_credentials: bool = True
+    app_secret_key: str = "secret_key"
+    app_allowed_origins: str | list[str] = "*"
+    app_allow_methods: str | list[METHOD] = "*"
+    app_allow_headers: str | list[HEADERS] = "*"
+    app_allow_credentials: bool = True
 
-    logging: LogSettings = LogSettings()
+    app_logging: LogSettings = LogSettings()
 
-    @field_validator("allow_headers", "allowed_origins", "allow_methods")
+    @field_validator("app_allow_headers", "app_allowed_origins", "app_allow_methods")
     def to_list(cls, data: str | list[METHOD | HEADERS]) -> list[METHOD | HEADERS | str]:  # noqa
         """Перевод строки в список."""
         if isinstance(data, str):
@@ -56,7 +56,7 @@ class Settings(Base):
     @property
     def base_url(self) -> str:
         """Начальный url адрес приложения."""
-        return f"http://{self.server_host}:{self.app_port}"
+        return f"http://{self.app_server_host}:{self.app_port}"
 
 
 class PostgresSettings(Base):
@@ -102,12 +102,12 @@ class RedisSettings(Base):
 class AuthorizationSettings(Base):
     """Authorization settings."""
 
-    key: str = "authorization key"
-    algorithms: str = "HS256"
-    access_expires_delta: int = 120
-    refresh_expires_delta: int = 3600
+    auth_key: str = "authorization key"
+    auth_algorithms: str = "HS256"
+    auth_access_expires_delta: int = 120
+    auth_refresh_expires_delta: int = 3600
 
-    @field_validator("algorithms")
+    @field_validator("auth_algorithms")
     def to_list(cls, data: str | list[ALGORITHMS]) -> list[ALGORITHMS]:  # noqa
         """Перевод строки в список."""
         if isinstance(data, str):

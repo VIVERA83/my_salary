@@ -1,9 +1,13 @@
 from typing import Optional
 from uuid import UUID
 
+from icecream import ic
+
 from base.base_accessor import BaseAccessor
 from sqlalchemy import insert
 from store.blog.models import UserModel, TopicModel
+
+ic.includeContext = True
 
 
 class BlogAccessor(BaseAccessor):
@@ -51,3 +55,6 @@ class BlogAccessor(BaseAccessor):
             topic = await session.execute(smtp)
             await session.commit()
             return topic.fetchone()[0]
+
+    async def update_topic(self, title: str = None, description: str = None) -> Optional[TopicModel]:
+        ...

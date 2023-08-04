@@ -35,7 +35,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             return response
         except Exception as error:
             return self.exception_handler(
-                error, request.url, request.app.logger, self.settings.logging.traceback
+                error, request.url, request.app.logger, self.settings.app_logging.traceback
             )
 
 
@@ -45,7 +45,7 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp, invalid_token: CacheAccessor):
         self.invalid_token = invalid_token
         self.settings = AuthorizationSettings()
-        self.is_traceback = Settings().logging.traceback
+        self.is_traceback = Settings().app_logging.traceback
         self.public_access = PUBLIC_ACCESS
         self.exception_handler = ExceptionHandler()
         super().__init__(app)
@@ -75,7 +75,7 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
                 "Access token is invalid",
                 status.HTTP_401_UNAUTHORIZED,
             ]
-            verify_token(token, self.settings.key, self.settings.algorithms)
+            verify_token(token, self.settings.auth_key, self.settings.auth_algorithms)
         except Exception as error:
             return self.exception_handler(
                 error,
@@ -89,13 +89,13 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
 
 def setup_middleware(app: Application):
     """Настройка подключаемый Middleware."""
-    app.add_middleware(SessionMiddleware, secret_key=app.settings.secret_key)
+    app.add_middleware(SessionMiddleware, secret_key=app.settings.app_secret_key)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=app.settings.secret_key,
-        allow_methods=app.settings.allow_methods,
-        allow_headers=app.settings.allow_headers,
-        allow_credentials=app.settings.allow_credentials,
+        allow_origins=app.settings.app_secret_key,
+        allow_methods=app.settings.app_allow_methods,
+        allow_headers=app.settings.app_allow_headers,
+        allow_credentials=app.settings.app_allow_credentials,
     )
     app.add_middleware(ErrorHandlingMiddleware)
     app.add_middleware(AuthorizationMiddleware, invalid_token=app.store.invalid_token)

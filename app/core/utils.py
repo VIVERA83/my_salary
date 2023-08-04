@@ -187,7 +187,7 @@ class ExceptionHandler:
         Выводится сообщение в лог, о том что нужно строчно решить проблему.
         """
         self.message = "Unknown error..."
-        self.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        self.status_code = status.HTTP_400_BAD_REQUEST
         self.level = logging.WARNING
 
     def handler_connection_to_error(self):
@@ -249,7 +249,7 @@ class ExceptionHandler:
             case "ERROR" | 40:
                 self.logger.error(msg)
             case "WARNING" | 30:
-                self.logger.error(msg)
+                self.logger.warning(msg)
             case _:
                 self.logger.info(msg)
         return JSONResponse(content=content_data, status_code=self.status_code)
