@@ -12,7 +12,7 @@ class Store:
     auth: UserAccessor
     jwt: JWTAccessor
     auth_manager: UserManager
-    invalid_token: CacheAccessor
+    cache: CacheAccessor
 
     def __init__(self, app: Application): ...
 
