@@ -1,8 +1,8 @@
 from typing import Optional
 
-from store.user.models import UserModel as UserModel
 from base.base_accessor import BaseAccessor
 from sqlalchemy import and_, insert, select, update
+from store.user.models import UserModel as UserModel
 
 
 class UserAccessor(BaseAccessor):

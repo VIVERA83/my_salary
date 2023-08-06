@@ -1,8 +1,8 @@
 from typing import Any, Literal
 
-from user.schemes import TokenSchema
 from base.base_accessor import BaseAccessor
 from fastapi import Response, status
+from user.schemes import TokenSchema
 
 USER_DATA_KEY = Literal[
     "name",

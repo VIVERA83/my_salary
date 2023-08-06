@@ -1,8 +1,8 @@
 from core.components import Application
-from store.user.accessor import UserAccessor
-from store.user_manager.manager import UserManager
 from store.cache.accessor import CacheAccessor
 from store.jwt.jwt import JWTAccessor
+from store.user.accessor import UserAccessor
+from store.user_manager.manager import UserManager
 
 class Store:
     """Store, data service and working with it."""
