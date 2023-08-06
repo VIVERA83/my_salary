@@ -2,7 +2,7 @@
 import os
 
 from core.utils import ALGORITHM, ALGORITHMS, HEADERS, METHOD
-from pydantic import BaseModel, SecretStr, field_validator
+from pydantic import BaseModel, SecretStr, field_validator, EmailStr
 from pydantic_settings import BaseSettings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
@@ -120,3 +120,14 @@ class AuthorizationSettings(Base):
                 " you can use: {algs}.".format(alg=alg, algs=ALGORITHMS)
             )
         return data
+
+
+class EmailMessageServiceSettings(Base):
+    """Email message service settings."""
+
+    ems_is_tls: bool = False
+    ems_host: str
+    ems_port: int = 587
+    ems_user: str
+    ems_password: SecretStr
+    ems_sender: EmailStr

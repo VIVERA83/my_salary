@@ -2,6 +2,7 @@
 from store.blog.accessor import BlogAccessor
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
+from store.ems.ems import EmailMessageService
 from store.jwt.jwt import JWTAccessor
 from store.user.accessor import UserAccessor
 from store.user_manager.manager import UserManager
@@ -23,6 +24,7 @@ class Store:
         self.auth_manager = UserManager(app)
         self.cache = CacheAccessor(app)
         self.blog = BlogAccessor(app)
+        self.ems = EmailMessageService(app)
 
 
 def setup_store(app):
