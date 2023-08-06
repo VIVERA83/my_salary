@@ -1,17 +1,20 @@
 """Schemas сервиса Блога, подраздел Topic(TOPIC)."""
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from pydantic import BaseModel, Field, field_validator
 
-ID: UUID = Field(example="1595c2fc-397a-40c9-8105-a4d2f0a33a7a",
-                 description="unique indicator of topic",
-                 )
-TITLE: str = Field(example="Docker",
-                   description="Topic description",
-                   )
-DESCRIPTION: str = Field(example="Docker documentations and examples or practice",
-                         description="description",
-                         )
+ID: UUID = Field(
+    example="1595c2fc-397a-40c9-8105-a4d2f0a33a7a",
+    description="unique indicator of topic",
+)
+TITLE: str = Field(
+    example="Docker",
+    description="Topic description",
+)
+DESCRIPTION: str = Field(
+    example="Docker documentations and examples or practice",
+    description="description",
+)
 
 
 class BaseSchema(BaseModel):
@@ -51,8 +54,7 @@ class TopicSchemaUpdateIn(BaseModel):
     #                 default=None,
     #                 description="Topic description",
     #                 )
-    description: str | None \
-        # = Field(example="Docker documentations and examples or practice",
+    description: str | None  # = Field(example="Docker documentations and examples or practice",
     #                      default=None,
     #                      description="description",
     #                      )
