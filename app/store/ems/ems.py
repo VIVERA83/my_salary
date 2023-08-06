@@ -73,3 +73,21 @@ class EmailMessageService(BaseAccessor):
         if html_text is not None:
             msg.add_alternative(html_text, subtype='html')
         return msg
+
+    async def create_and_sent(self,
+                              email: EmailStr,
+                              subject: str,
+                              text: str,
+                              html_text: str = None,
+                              ) -> EmailMessage:
+        """Create and send a message to a specific email address.
+
+        Args:
+            email: Email
+            subject: Email subject
+            text: Email text
+            html_text: html Email text
+        """
+        msg = self.create_email_message(email, subject, text, html_text)
+        await self.send(msg)
+        return msg
