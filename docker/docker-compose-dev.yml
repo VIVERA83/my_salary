@@ -36,6 +36,9 @@ services:
   redis:
     restart: always
     image: redis/redis-stack:latest
+    volumes:
+      - redis_volume:/data
 
 volumes:
   postgres_volume:
+  redis_volume:
