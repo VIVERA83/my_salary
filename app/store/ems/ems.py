@@ -12,33 +12,33 @@ class EmailMessageService(BaseAccessor):
 
     Create and send email message.
     """
-    settings: EmailMessageServiceSettings()
-    smtp: SMTP
+    _settings: EmailMessageServiceSettings()
+    _smtp: SMTP
 
     def _init(self):
         """initialization of additional service settings."""
-        self.settings = EmailMessageServiceSettings()
+        self._settings = EmailMessageServiceSettings()
 
     async def connect(self):
         """Connect to SMTP server."""
-        self.smtp = SMTP(
-            hostname=self.settings.ems_host,
-            port=self.settings.ems_port,
-            use_tls=self.settings.ems_is_tls,
+        self._smtp = SMTP(
+            hostname=self._settings.ems_host,
+            port=self._settings.ems_port,
+            use_tls=self._settings.ems_is_tls,
         )
-        if self.settings.ems_is_tls:
-            await self.smtp.starttls()
-        response = await self.smtp.connect()
+        if self._settings.ems_is_tls:
+            await self._smtp.starttls()
+        response = await self._smtp.connect()
         assert response.code in range(200, 300), (
             "EmailMessageService, Connection error host={host}, message={message}".format(
-                host=self.settings.ems_host, message=response.message))
+                host=self._settings.ems_host, message=response.message))
 
-        self.logger.info("Connected to SMTP server: {smtp}".format(smtp=self.settings.ems_host))
+        self.logger.info("Connected to SMTP server: {smtp}".format(smtp=self._settings.ems_host))
         self.logger.info("SMTP server response message: {msg}".format(msg=response.message))
 
     async def disconnect(self):
-        response = await self.smtp.quit()
-        self.logger.info("Disconnect SMTP server: {smtp}".format(smtp=self.settings.ems_host))
+        response = await self._smtp.quit()
+        self.logger.info("Disconnect SMTP server: {smtp}".format(smtp=self._settings.ems_host))
         self.logger.info("SMTP server response message: {msg}".format(msg=response.message))
 
     async def send(self, msg: EmailMessage) -> None:
@@ -47,8 +47,8 @@ class EmailMessageService(BaseAccessor):
         Args:
             msg: email message to send
         """
-        await self.smtp.login(self.settings.ems_user, self.settings.ems_password.get_secret_value())
-        await self.smtp.send_message(msg)
+        await self._smtp.login(self._settings.ems_user, self._settings.ems_password.get_secret_value())
+        await self._smtp.send_message(msg)
 
     def create_email_message(self,
                              email: EmailStr,
@@ -67,7 +67,7 @@ class EmailMessageService(BaseAccessor):
         msg = EmailMessage()
         msg.preamble = subject
         msg['Subject'] = subject
-        msg['From'] = self.settings.ems_sender
+        msg['From'] = self._settings.ems_sender
         msg['To'] = email
         msg.set_content(text)
         if html_text is not None:
