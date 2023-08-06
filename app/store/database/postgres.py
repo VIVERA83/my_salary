@@ -1,11 +1,11 @@
 """Database..."""
-from dataclasses import asdict, is_dataclass, dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from typing import Optional, Type
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
-from sqlalchemy import MetaData, TIMESTAMP, func, DATETIME
+from sqlalchemy import DATETIME, TIMESTAMP, MetaData, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -68,12 +68,12 @@ class Postgres(BaseAccessor):
         self.settings = PostgresSettings()
         self._db = Base
         self._engine = create_async_engine(
-            self.settings.dsn,
+            self.settings.dsn(True),
             echo=False,
             future=True,
         )
         self.session = AsyncSession(self._engine, expire_on_commit=False)
-        self.logger.info("Connected to Postgres")
+        self.logger.info("Connected to Postgres, {dsn}".format(dsn=self.settings.dsn()))
 
     async def disconnect(self):
         """Closing the connection to the database."""
