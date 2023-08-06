@@ -9,10 +9,10 @@ class Store:
     """Store, data service and working with it."""
 
     blog: BlogAccessor
-    auth = UserAccessor
-    jwt = JWTAccessor
-    auth_manager = UserManager
-    invalid_token = CacheAccessor
+    auth: UserAccessor
+    jwt: JWTAccessor
+    auth_manager: UserManager
+    invalid_token: CacheAccessor
 
     def __init__(self, app: Application): ...
 
