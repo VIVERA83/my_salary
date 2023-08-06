@@ -10,7 +10,7 @@ class JWTAccessor(BaseAccessor):
     def _init(self):
         self.settings = AuthorizationSettings()
         self.access_security = JwtAccessBearer(
-            secret_key=self.settings.auth_key,
+            secret_key=self.settings.auth_key.get_secret_value(),
             auto_error=True,
             access_expires_delta=timedelta(seconds=self.settings.auth_access_expires_delta),
             refresh_expires_delta=timedelta(seconds=self.settings.auth_refresh_expires_delta),
