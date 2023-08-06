@@ -1,5 +1,6 @@
 """Middleware приложения."""
-from core.components import Application, Request as RequestApp
+from core.components import Application
+from core.components import Request as RequestApp
 from core.settings import AuthorizationSettings, Settings
 from core.utils import (
     PUBLIC_ACCESS,
@@ -75,7 +76,9 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
                 "Access token is invalid",
                 status.HTTP_401_UNAUTHORIZED,
             ]
-            verify_token(token, self.settings.auth_key, self.settings.auth_algorithms)
+            verify_token(
+                token, self.settings.auth_key.get_secret_value(), self.settings.auth_algorithms
+            )
         except Exception as error:
             return self.exception_handler(
                 error,
@@ -89,10 +92,12 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
 
 def setup_middleware(app: Application):
     """Настройка подключаемый Middleware."""
-    app.add_middleware(SessionMiddleware, secret_key=app.settings.app_secret_key)
+    app.add_middleware(
+        SessionMiddleware, secret_key=app.settings.app_secret_key.get_secret_value()
+    )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=app.settings.app_secret_key,
+        allow_origins=app.settings.app_allowed_origins,
         allow_methods=app.settings.app_allow_methods,
         allow_headers=app.settings.app_allow_headers,
         allow_credentials=app.settings.app_allow_credentials,

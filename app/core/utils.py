@@ -7,17 +7,22 @@ from logging import Logger
 from typing import Literal, Optional
 
 from httpcore import URL
-from icecream import ic
 from jose import JWSError, jws
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from user.schemes import TokenSchema
 
-ALGORITHMS = Literal[
+ALGORITHMS = [
+    "HS512",
     "HS256",
     "HS128",
 ]
+ALGORITHM = Literal[
+    "HS256",
+    "HS128",
+]
+
 METHOD = Literal[
     "HEAD",
     "OPTIONS",
@@ -136,7 +141,7 @@ def verify_token(token: str, key: str, algorithms: str) -> bool:
     except JWSError as e:
         raise AssertionError([e.args[0], status.HTTP_400_BAD_REQUEST])
     assert payload.get("exp", 1) > int(datetime.now().timestamp()), [
-        "Access token from the expiration date, please login or refresh",
+        "Access token from the expiration date, please login or refresh.",
         status.HTTP_401_UNAUTHORIZED,
     ]
     return True
@@ -150,7 +155,6 @@ def update_request_state(request: "Request", token: str):
 
 def get_error_content(message: str) -> tuple[str, str]:
     m = re.findall(r"\(([A-Za-z0-9_@.]+)\)", message)
-    ic(m, message)
     return m[1], m[2]
 
 
