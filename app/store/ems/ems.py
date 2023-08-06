@@ -8,6 +8,10 @@ from core.settings import EmailMessageServiceSettings
 
 
 class EmailMessageService(BaseAccessor):
+    """Email Message Service.
+
+    Create and send email message.
+    """
     settings: EmailMessageServiceSettings()
     smtp: SMTP
 
@@ -37,8 +41,7 @@ class EmailMessageService(BaseAccessor):
         self.logger.info("Disconnect SMTP server: {smtp}".format(smtp=self.settings.ems_host))
         self.logger.info("SMTP server response message: {msg}".format(msg=response.message))
 
-    async def send_email(self, msg: EmailMessage
-                         ) -> None:
+    async def send(self, msg: EmailMessage) -> None:
         """Send an outgoing email with the user's credentials.
 
         Args:
