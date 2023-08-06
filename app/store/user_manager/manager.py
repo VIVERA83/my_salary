@@ -18,6 +18,8 @@ class UserManager(BaseAccessor):
     async def create_user(self, response: Response, **user_data) -> dict[USER_DATA_KEY, Any]:
         """Create a new user and tokens."""
         user = await self.app.store.auth.create_user(**user_data)
+        # TODO Нужно придумать как действовать если не удастся создать вторую запись
+        await self.app.store.blog.create_user(user.id, user.name, user.email)
         return await self._create_tokens_update_response(response, user)
 
     async def login(self, response: Response, **user_data) -> dict[USER_DATA_KEY, Any]:

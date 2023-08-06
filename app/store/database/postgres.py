@@ -1,17 +1,17 @@
 """Database..."""
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass, dataclass
 from typing import Optional, Type
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, TIMESTAMP, func, DATETIME
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
+@dataclass
 class Base(DeclarativeBase):
     """Setting up metadata.
 
@@ -26,6 +26,12 @@ class Base(DeclarativeBase):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
+    )
+    created: Mapped[DATETIME] = mapped_column(
+        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+    )
+    modified: Mapped[DATETIME] = mapped_column(
+        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
     )
 
     def __repr__(self):
@@ -42,6 +48,7 @@ class Base(DeclarativeBase):
     __str__ = __repr__
 
     def as_dict(self) -> dict:
+        assert is_dataclass(self), f"Wrap the model `{self.__name__}` in a dataclass"
         return asdict(self)  # noqa
 
 

@@ -6,8 +6,14 @@ from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
 from fastapi.security import HTTPBearer
-from user.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
-                          UserSchemaOut, UserSchemaRegistration)
+
+from user.schemes import (
+    OkSchema,
+    RefreshSchema,
+    UserSchemaLogin,
+    UserSchemaOut,
+    UserSchemaRegistration,
+)
 
 auth_route = APIRouter(prefix="/api/v1")
 

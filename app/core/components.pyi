@@ -23,7 +23,7 @@ class Application(FastAPI):
     postgres: Postgres
     logger: logging.Logger
 
-class Request:
+class Request(FastAPIRequest):
     """Переопределения Request.
 
     Для корректной подсказки IDE по методам `Application`."""

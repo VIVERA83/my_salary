@@ -10,10 +10,10 @@ class JWTAccessor(BaseAccessor):
     def _init(self):
         self.settings = AuthorizationSettings()
         self.access_security = JwtAccessBearer(
-            secret_key=self.settings.key,
+            secret_key=self.settings.auth_key,
             auto_error=True,
-            access_expires_delta=timedelta(seconds=self.settings.access_expires_delta),
-            refresh_expires_delta=timedelta(seconds=self.settings.refresh_expires_delta),
+            access_expires_delta=timedelta(seconds=self.settings.auth_access_expires_delta),
+            refresh_expires_delta=timedelta(seconds=self.settings.auth_refresh_expires_delta),
         )
 
     def create_access_token(
@@ -22,13 +22,13 @@ class JWTAccessor(BaseAccessor):
     ) -> str:
         subject = {"user_id": user_id}
         return self.access_security.create_access_token(
-            subject, timedelta(seconds=self.settings.access_expires_delta)
+            subject, timedelta(seconds=self.settings.auth_access_expires_delta)
         )
 
     def create_refresh_token(self, user_id: str) -> str:
         subject = {"user_id": user_id}
         return self.access_security.create_refresh_token(
-            subject, timedelta(seconds=self.settings.access_expires_delta)
+            subject, timedelta(seconds=self.settings.auth_access_expires_delta)
         )
 
     def create_tokens(self, user_id: str) -> tuple[str, str]:
@@ -43,7 +43,7 @@ class JWTAccessor(BaseAccessor):
         self.access_security.set_refresh_cookie(
             response,
             refresh_token,
-            timedelta(self.settings.refresh_expires_delta),
+            timedelta(self.settings.auth_refresh_expires_delta),
         )
 
     def unset_refresh_token_cookie(
