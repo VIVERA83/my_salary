@@ -99,5 +99,5 @@ class CustomState(State):
     Для корректной подсказки IDE по методам `Request`.
     """
 
-    access_token: Optional["TokenSchema"]
+    token: Optional["TokenSchema"]
     user_id: Optional[str] = None

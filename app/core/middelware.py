@@ -2,17 +2,12 @@
 from core.components import Application
 from core.components import Request as RequestApp
 from core.settings import AuthorizationSettings, Settings
-from core.utils import (
-    PUBLIC_ACCESS,
-    ExceptionHandler,
-    check_path,
-    get_access_token,
-    update_request_state,
-    verification_public_access,
-    verify_token,
-)
+from core.utils import (PUBLIC_ACCESS, ExceptionHandler, check_path, get_token,
+                        update_request_state, verification_public_access,
+                        verify_token)
 from fastapi import status
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.middleware.base import (BaseHTTPMiddleware,
+                                       RequestResponseEndpoint)
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
@@ -43,8 +38,8 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 class AuthorizationMiddleware(BaseHTTPMiddleware):
     """Authorization MiddleWare."""
 
-    def __init__(self, app: ASGIApp, invalid_token: CacheAccessor):
-        self.invalid_token = invalid_token
+    def __init__(self, app: ASGIApp, cache: CacheAccessor):
+        self.cache = cache
         self.settings = AuthorizationSettings()
         self.is_traceback = Settings().app_logging.traceback
         self.public_access = PUBLIC_ACCESS
@@ -71,14 +66,20 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         if check_path(request) or verification_public_access(request, self.public_access):
             return await call_next(request)
         try:
-            token = get_access_token(request)
-            assert not await self.invalid_token.get_token(token), [
+            token = get_token(request)
+            assert -2 == await self.cache.ttl(token), [
                 "Access token is invalid",
                 status.HTTP_401_UNAUTHORIZED,
             ]
             verify_token(
                 token, self.settings.auth_key.get_secret_value(), self.settings.auth_algorithms
             )
+            update_request_state(request, token)
+            assert check_permission(request.state.token.payload.type, request.url.path), [
+                "Forbidden, token does not give access to apis,"
+                " token type: {token_type}".format(token_type=request.state.token.payload.type),
+                status.HTTP_403_FORBIDDEN,
+            ]
         except Exception as error:
             return self.exception_handler(
                 error,
@@ -86,7 +87,6 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
                 request.app.logger,
                 self.is_traceback,
             )
-        update_request_state(request, token)
         return await call_next(request)
 
 
@@ -103,4 +103,28 @@ def setup_middleware(app: Application):
         allow_credentials=app.settings.app_allow_credentials,
     )
     app.add_middleware(ErrorHandlingMiddleware)
-    app.add_middleware(AuthorizationMiddleware, invalid_token=app.store.invalid_token)
+    app.add_middleware(AuthorizationMiddleware, cache=app.store.cache)
+
+
+def check_permission(token_type: str, path: str) -> bool:
+    """Check permissions in the given path and token type.
+
+    Args:
+        token_type: one of the 'recovery', verif', 'access'
+        path: endpoint path to check permissions
+    """
+    match token_type, path:
+        case "recovery", "/api/v1/reset_password":
+            return True
+        case "verif", "/api/v1/reset_password":
+            return True
+        case "verification", "/api/v1/registration_user":
+            return True
+        case "access", path:
+            return path not in [
+                "/api/v1/reset_password",
+                "/api/v1/create_user",
+                "/api/v1/registration_user",
+            ]
+        case _:
+            return False

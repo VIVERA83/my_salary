@@ -1,7 +1,8 @@
 """Views сервиса по работе с темами для постов (TOPIC)."""
 from typing import Any
 
-from blog.topic.schemes import TopicSchemaIn, TopicSchemaOut, TopicSchemaUpdateIn
+from blog.topic.schemes import (TopicSchemaIn, TopicSchemaOut,
+                                TopicSchemaUpdateIn)
 from core.components import Request
 from fastapi import APIRouter
 

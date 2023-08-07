@@ -5,14 +5,10 @@ from typing import Any
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
-from user.schemes import (
-    OkSchema,
-    RefreshSchema,
-    UserSchemaLogin,
-    UserSchemaOut,
-    UserSchemaRegistration,
-)
-from user.utils import description_create_user, description_registration_user
+from user.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
+                          UserSchemaOut, UserSchemaRegistration)
+from user.utils import description_create_user, description_registration_user, description_logout_user, \
+    description_refresh_tokens, description_login_user
 
 auth_route = APIRouter(prefix="/api/v1")
 
@@ -26,8 +22,8 @@ auth_route = APIRouter(prefix="/api/v1")
     response_model=OkSchema,
 )
 async def create_user(
-        request: "Request",
-        user: UserSchemaRegistration,
+    request: "Request",
+    user: UserSchemaRegistration,
 ) -> Any:
     """A temporary user record is created in the temporary storage.
 
@@ -71,7 +67,7 @@ async def user_registration(request: "Request", response: Response) -> Any:
 @auth_route.post(
     "/login",
     summary="Авторизация",
-    description="Авторизация пользователя в сервисе.",
+    description=description_login_user,
     response_description="Анкетные данные пользователя, кроме секретных данных.",
     tags=["AUTH"],
     response_model=UserSchemaOut,
@@ -93,8 +89,7 @@ async def login(request: "Request", response: Response, user: UserSchemaLogin) -
 @auth_route.get(
     "/logout",
     summary="Выход",
-    description="Выход из системы, что бы снова пользоваться "
-                "сервисом необходимо будет снова авторизоваться.",
+    description=description_logout_user,
     tags=["AUTH"],
     response_model=OkSchema,
 )
@@ -118,7 +113,7 @@ async def logout(request: "Request", response: Response) -> Any:
 @auth_route.get(
     "/refresh",
     summary="Обновить токен доступа",
-    description="Обновление токенов доступа.",
+    description=description_refresh_tokens,
     tags=["AUTH"],
     response_model=RefreshSchema,
 )
@@ -142,7 +137,7 @@ async def refresh(request: "Request", response: Response) -> Any:
     response_model=OkSchema,
 )
 def get_token(
-        authorization=Depends(HTTPBearer(auto_error=True)),
+    authorization=Depends(HTTPBearer(auto_error=True)),
 ) -> Any:  # noqa
     """Returns Ok.
 

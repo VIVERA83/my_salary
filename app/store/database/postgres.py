@@ -1,5 +1,5 @@
 """Database..."""
-from dataclasses import asdict, dataclass, is_dataclass
+from dataclasses import asdict, dataclass, is_dataclass, make_dataclass
 from typing import Optional, Type
 from uuid import uuid4
 
@@ -7,7 +7,8 @@ from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
 from sqlalchemy import DATETIME, TIMESTAMP, MetaData, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    create_async_engine)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -34,6 +35,10 @@ class Base(DeclarativeBase):
         TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
     )
 
+    def as_dict(self) -> dict:
+        assert is_dataclass(self), f"Wrap the model `{self.__name__}` in a dataclass"
+        return asdict(self)  # noqa
+
     def __repr__(self):
         """Redefinition.
 
@@ -46,10 +51,6 @@ class Base(DeclarativeBase):
         )
 
     __str__ = __repr__
-
-    def as_dict(self) -> dict:
-        assert is_dataclass(self), f"Wrap the model `{self.__name__}` in a dataclass"
-        return asdict(self)  # noqa
 
 
 class Postgres(BaseAccessor):

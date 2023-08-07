@@ -2,7 +2,7 @@
 import os
 
 from core.utils import ALGORITHM, ALGORITHMS, HEADERS, METHOD
-from pydantic import BaseModel, SecretStr, field_validator, EmailStr
+from pydantic import BaseModel, EmailStr, SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))

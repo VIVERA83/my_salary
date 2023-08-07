@@ -7,6 +7,8 @@ from jose import jws
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
+EMAIL = Field(title="email адрес пользователя, уникальный элемент")
+
 
 class BaseSchema(BaseModel):
     """Base Schema class."""
@@ -22,14 +24,14 @@ class BaseUserSchema(BaseSchema):
     """Base User Schema."""
 
     name: str = Field(title="Имя пользователя", example="Василий Алибабаевич")
-    email: EmailStr = Field(title="email адрес пользователя, уникальный элемент")
+    email: EmailStr = EMAIL
 
 
 class UserSchemaRegistration(BaseSchema):
     """Schema of the user during registration."""
 
     name: str = Field(title="Имя", example="Василий")
-    email: EmailStr = Field(title="email адрес пользователя, уникальный элемент.")
+    email: EmailStr = EMAIL
     password: str = Field(title="Пароль", example="password")
     password_confirmation: str = Field(
         title="Пароль, подтверждение ",
@@ -160,4 +162,5 @@ class PayloadTokenSchema(BaseModel):
     exp: int
     iat: int
     type: str
+    email: EmailStr = EMAIL
     user_id: UUID = Field(title="уникальный идентификатор пользователя")

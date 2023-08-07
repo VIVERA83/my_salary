@@ -1,8 +1,19 @@
-from typing import Any, Literal
+import json
+from dataclasses import asdict, dataclass
+from enum import Enum
+from typing import Any, Dict, Literal
+from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
+from core.settings import AuthorizationSettings
 from fastapi import Response, status
+from icecream import ic
+from pydantic import EmailStr
+from store.user_manager.utils import set_cookie, unset_cookie
 from user.schemes import TokenSchema
+
+NAME = Dict["name", str]
+EMAIL = Dict["email", EmailStr]
 
 USER_DATA_KEY = Literal[
     "name",
@@ -13,49 +24,126 @@ USER_DATA_KEY = Literal[
     "access_token",
 ]
 
+CREATE_USER_DATA = Dict[NAME | EMAIL, Any]
+
+ic.includeContext = True
+
+
+@dataclass
+class User:
+    email: EmailStr
+    password: str
+    id: str = uuid4().hex
+    name: str = "Пользователь"
+    is_superuser: bool = None
+    refresh_token: str = None
+    access_token: str = None
+
+    @property
+    def as_dict(self):
+        return asdict(self)
+
+    @property
+    def as_string(self):
+        return json.dumps(self.as_dict)
+
+
+class TokenType(Enum):
+    verification = "verification"
+
 
 class UserManager(BaseAccessor):
-    async def create_user(self, response: Response, **user_data) -> dict[USER_DATA_KEY, Any]:
-        """Create a new user and tokens."""
-        user = await self.app.store.auth.create_user(**user_data)
-        # TODO Нужно придумать как действовать если не удастся создать вторую запись
-        await self.app.store.blog.create_user(user.id, user.name, user.email)
-        return await self._create_tokens_update_response(response, user)
+    def _init(self):
+        self.settings = AuthorizationSettings()
+
+    async def create_user(self, **user_data: CREATE_USER_DATA) -> User:
+        """Create temporary user data.
+
+        1. Check email address in cache.
+        2. Check email in database.
+        3. Create token for verification email address
+        4. Save the temporary data in Redis
+        5. Send letter in email for verification email addresses.
+
+        Args:
+            user_data: Requested user data
+        """
+        user = User(**user_data)
+        seconds = await self.app.store.cache.ttl(user.email)
+        assert -1 > seconds, (
+            "A letter has been sent to this email address '{email}',"
+            " check the email or the address is not specified correctly."
+            "Resending an email is possible after {seconds} seconds".format(
+                email=user.email, seconds=seconds
+            )
+        )
+        assert not await self.app.store.auth.get_user_by_email(
+            user.email
+        ), "Email is already in use, try other email address, not these '{email}'".format(
+            email=user.email
+        )
+
+        token = self.app.store.token.create_verification_token(uuid4().hex, user.email)
+        await self.app.store.cache.set(user.email, user.as_string, 1800000)
+        await self.app.store.ems.send_message_to_confirm_email(
+            user.email, user.name, token, link="test"
+        )
+        return user
+
+    async def user_registration(
+        self, email: EmailStr, response: Response
+    ) -> dict[USER_DATA_KEY, Any]:
+        """Registration new user.
+
+        Save in database user data, creates tokens."""
+        user_data = json.loads(await self.app.store.cache.get(email))
+        assert user_data, "User data, not found, please try again creating user"
+        user = User(**user_data)
+        async with self.app.postgres.session.begin().session as session:
+            new_user = await self.app.store.auth.create_user(
+                user.name, user.email, user.password, user.is_superuser, False
+            )
+            user_blog = await self.app.store.blog.create_user(
+                new_user.id, new_user.name, new_user.email, False
+            )
+            session.add_all([new_user, user_blog])
+            access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(
+                new_user.id.hex, new_user.email
+            )
+            set_cookie(
+                "refresh", refresh_token, response, self.settings.auth_refresh_expires_delta
+            )
+            await session.commit()
+        return {**new_user.as_dict(), "access_token": access_token}
 
     async def login(self, response: Response, **user_data) -> dict[USER_DATA_KEY, Any]:
         """Login user amd create new tokens."""
         user = await self.app.store.auth.get_user_by_email(user_data["email"])
-        assert user, ["User not found", status.HTTP_401_UNAUTHORIZED]
-        assert user.password == user_data["password"], [
-            "Password is incorrect",
-            status.HTTP_401_UNAUTHORIZED,
-        ]
-        return await self._create_tokens_update_response(response, user)
+        assert user, "User not found"
+        assert user.password == user_data["password"], "Password is incorrect"
+        return self.app.store.token.create_access_and_refresh_tokens(user.id, user.email)
 
     async def logout(self, response: Response, user_id: str, token: str, expire: int):
-        self.app.store.jwt.unset_refresh_token_cookie(response)
-        await self.app.store.invalid_token.set_token(token, user_id, expire + 5)
+        unset_cookie("refresh", response)
+        await self.app.store.cache.set(token, user_id, expire + 5)
         await self.app.store.auth.add_refresh_token_to_user(user_id)
 
     async def refresh(self, request, response: Response) -> dict[USER_DATA_KEY, Any]:
         """Refresh the user tokens."""
-        token_raw = request.cookies.get("refresh_token_cookie")
+        token_raw = request.cookies.get("refresh")
         assert token_raw, [
             "Refresh token cookie is missing",
             status.HTTP_400_BAD_REQUEST,
         ]
+        ic(token_raw)
         token = TokenSchema(token_raw)
         user = await self.app.store.auth.get_user_by_id_and_refresh_token(
             token.payload.user_id.hex, token.token
         )
         assert user, ["User not found", status.HTTP_401_UNAUTHORIZED]
-        return await self._create_tokens_update_response(response, user)
 
-    async def _create_tokens_update_response(
-        self, response: Response, user
-    ) -> dict[USER_DATA_KEY, Any]:
-        """Create tokens update response."""
-        access_token, refresh_token = self.app.store.jwt.create_tokens(user.id.hex)
-        self.app.store.jwt.set_refresh_token_cookie(refresh_token, response)
-        await self.app.store.auth.add_refresh_token_to_user(user.id, refresh_token)
+        access_token, refresh_token = await self.app.store.token.create_access_and_refresh_tokens(
+            user.id, user.email
+        )
+        set_cookie("refresh", refresh_token, response, self.settings.auth_refresh_expires_delta)
         return {**user.as_dict(), "access_token": access_token}

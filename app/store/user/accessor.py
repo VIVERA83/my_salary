@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, Union
 
 from base.base_accessor import BaseAccessor
-from sqlalchemy import and_, insert, select, update
-from store.user.models import UserModel as UserModel
+from sqlalchemy import Delete, Insert, Update, and_, insert, select, update
+from store.user.models import UserModel
 
 
 class UserAccessor(BaseAccessor):
@@ -14,7 +14,8 @@ class UserAccessor(BaseAccessor):
         email: str,
         password: str,
         is_superuser: Optional[bool] = None,
-    ) -> Optional[UserModel]:
+        is_commit: bool = True,
+    ) -> UserModel:
         """Adding a new user to the database.
 
         Args:
@@ -22,25 +23,24 @@ class UserAccessor(BaseAccessor):
             email: user email
             password: user password
             is_superuser: boolean if true user is superuser
+            is_commit: if True, the user saves in the database
 
         Returns:
             object: UserModel
         """
-        async with self.app.postgres.session.begin().session as session:
-            smtp = (
-                insert(UserModel)
-                .values(
-                    name=name,
-                    email=email,
-                    password=password,
-                    is_superuser=is_superuser,
-                )
-                .returning(UserModel)
+        smtp = (
+            insert(UserModel)
+            .values(
+                name=name,
+                email=email,
+                password=password,
+                is_superuser=is_superuser,
             )
-            user = await session.execute(smtp)
-            await session.commit()
-            if user:
-                return user.unique().fetchone()[0]
+            .returning(UserModel)
+        )
+        if is_commit:
+            return await self.commit(smtp)
+        return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
     async def get_user_by_email(self, email: str) -> Optional[UserModel]:
         """Get a user by email.
@@ -80,3 +80,14 @@ class UserAccessor(BaseAccessor):
             )
             await session.execute(query)
             await session.commit()
+
+    async def commit(self, smtp: Union[Insert, Delete, Update]):
+        """Commit and return the model instance.
+
+        Args:
+            smtp: SMTP connection
+        """
+        async with self.app.postgres.session as session:
+            user = (await session.execute(smtp)).fetchone()[0]
+            await session.commit()
+            return user

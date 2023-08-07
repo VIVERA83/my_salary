@@ -2,11 +2,12 @@ import json
 import logging
 import re
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging import Logger
 from typing import Literal, Optional
 
 from httpcore import URL
+from icecream import ic
 from jose import JWSError, jws
 from starlette import status
 from starlette.requests import Request
@@ -76,7 +77,7 @@ HTTP_EXCEPTION = {
 }
 
 
-def get_access_token(request: "Request") -> Optional[str]:
+def get_token(request: "Request") -> Optional[str]:
     """Попытка получить token из headers (authorization Bear).
 
     Args:
@@ -98,9 +99,7 @@ def get_access_token(request: "Request") -> Optional[str]:
     return "".join(token)
 
 
-def check_path(
-    request: "Request",
-) -> bool:
+def check_path(request: "Request") -> bool:
     """Checking if there is a requested path.
 
     Args:
@@ -140,8 +139,9 @@ def verify_token(token: str, key: str, algorithms: str) -> bool:
         )
     except JWSError as e:
         raise AssertionError([e.args[0], status.HTTP_400_BAD_REQUEST])
+    token_type = payload.get("type", "unknown")
     assert payload.get("exp", 1) > int(datetime.now().timestamp()), [
-        "Access token from the expiration date, please login or refresh.",
+        "The '{token_type}' token has expired.".format(token_type=token_type.capitalize()),
         status.HTTP_401_UNAUTHORIZED,
     ]
     return True
@@ -149,7 +149,7 @@ def verify_token(token: str, key: str, algorithms: str) -> bool:
 
 def update_request_state(request: "Request", token: str):
     token = TokenSchema(token)
-    request.state.access_token = token
+    request.state.token = token
     request.state.user_id = token.payload.user_id.hex
 
 
