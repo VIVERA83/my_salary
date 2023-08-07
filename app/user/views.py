@@ -4,7 +4,6 @@ from typing import Any
 
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
-from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
 from fastapi.security import HTTPBearer
 from user.schemes import (
     OkSchema,
@@ -13,35 +12,60 @@ from user.schemes import (
     UserSchemaOut,
     UserSchemaRegistration,
 )
+from user.utils import description_create_user, description_registration_user
 
 auth_route = APIRouter(prefix="/api/v1")
 
 
 @auth_route.post(
     "/create_user",
-    summary="Регистрация нового пользователя",
-    description="Регистрация нового пользователя в сервисе.",
-    response_description="Анкетные данные пользователя, кроме секретных данных.",
     tags=["AUTH"],
-    response_model=UserSchemaOut,
+    summary="Создание учетной записи пользователя",
+    description=description_create_user,
+    response_description="Анкетные данные пользователя, кроме секретных данных.",
+    response_model=OkSchema,
 )
 async def create_user(
-    request: "Request",
-    response: Response,
-    user: UserSchemaRegistration,
+        request: "Request",
+        user: UserSchemaRegistration,
 ) -> Any:
-    """Create new user.
+    """A temporary user record is created in the temporary storage.
+
+    And an email is sent to the user's email address to complete the registration process.
+    The record is stored for a limited time.
+    This record will be used if the user confirms the email to complete the user registration.
 
     Args:
         request: "Request"
-        response: Response
         user: UserSchemaRegistration
 
     Returns:
         object: UserSchemaOut
     """
-    user_data = await request.app.store.auth_manager.create_user(response, **user.model_dump())
-    return UserSchemaOut(**user_data)
+    await request.app.store.auth_manager.create_user(**user.model_dump())
+    return OkSchema(message="Temporary user record and sent verification email successfully")
+
+
+@auth_route.get(
+    "/registration_user",
+    tags=["AUTH"],
+    summary="Регистрация пользователя",
+    description=description_registration_user,
+    response_description="Анкетные данные пользователя, кроме секретных данных.",
+    response_model=UserSchemaOut,
+)
+async def user_registration(request: "Request", response: Response) -> Any:
+    """User registration.
+
+    From the current moment, the user is registered and receives an account
+    in the database, the email address is confirmed.
+
+    Args:
+        request: Request
+        response: Response
+    """
+    email = request.state.token.payload.email
+    return await request.app.store.auth_manager.user_registration(email, response)
 
 
 @auth_route.post(
@@ -70,7 +94,7 @@ async def login(request: "Request", response: Response, user: UserSchemaLogin) -
     "/logout",
     summary="Выход",
     description="Выход из системы, что бы снова пользоваться "
-    "сервисом необходимо будет снова авторизоваться.",
+                "сервисом необходимо будет снова авторизоваться.",
     tags=["AUTH"],
     response_model=OkSchema,
 )
@@ -84,7 +108,7 @@ async def logout(request: "Request", response: Response) -> Any:
     Returns:
         object: OkSchema
     """
-    token = request.state.access_token
+    token = request.state.token
     await request.app.store.auth_manager.logout(
         response, request.state.user_id, token.token, token.payload.exp
     )
@@ -118,7 +142,7 @@ async def refresh(request: "Request", response: Response) -> Any:
     response_model=OkSchema,
 )
 def get_token(
-    authorization=Depends(HTTPBearer(auto_error=True)),
+        authorization=Depends(HTTPBearer(auto_error=True)),
 ) -> Any:  # noqa
     """Returns Ok.
 
@@ -129,11 +153,3 @@ def get_token(
         optional: ok if authorization is valid
     """
     return OkSchema()
-
-
-@auth_route.get(
-    "/test",
-    summary="asdasdasd",
-)
-async def swagger_ui_redirect():
-    return get_swagger_ui_oauth2_redirect_html()
