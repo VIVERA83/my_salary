@@ -1,10 +1,13 @@
 from email.message import EmailMessage
+from typing import Tuple, Dict
 
-from aiosmtplib import SMTP
+from aiosmtplib import SMTP, SMTPResponse
+from icecream import ic
 from pydantic import EmailStr
 
 from base.base_accessor import BaseAccessor
 from core.settings import EmailMessageServiceSettings
+from store.ems.utils import EMAIL_VERIFIER_TEXT, TEMPLATE_HTML_TEXT
 
 
 class EmailMessageService(BaseAccessor):
@@ -32,23 +35,30 @@ class EmailMessageService(BaseAccessor):
         assert response.code in range(200, 300), (
             "EmailMessageService, Connection error host={host}, message={message}".format(
                 host=self._settings.ems_host, message=response.message))
-
+        response = await self._smtp.login(self._settings.ems_user, self._settings.ems_password.get_secret_value())
+        assert response.code in range(200, 300), (
+            "EmailMessageService, Authorization  error host={host}, message={message}".format(
+                host=self._settings.ems_host, message=response.message))
         self.logger.info("Connected to SMTP server: {smtp}".format(smtp=self._settings.ems_host))
         self.logger.info("SMTP server response message: {msg}".format(msg=response.message))
 
     async def disconnect(self):
-        response = await self._smtp.quit()
+        if self._smtp.is_connected:
+            self._smtp.close()
         self.logger.info("Disconnect SMTP server: {smtp}".format(smtp=self._settings.ems_host))
-        self.logger.info("SMTP server response message: {msg}".format(msg=response.message))
 
-    async def send(self, msg: EmailMessage) -> None:
+    async def send(self, msg: EmailMessage) -> Tuple[Dict[str, SMTPResponse], str]:
         """Send an outgoing email with the user's credentials.
 
         Args:
             msg: email message to send
         """
-        await self._smtp.login(self._settings.ems_user, self._settings.ems_password.get_secret_value())
-        await self._smtp.send_message(msg)
+        if not self._smtp.is_connected:
+            await self._smtp.connect()
+            await self._smtp.login(self._settings.ems_user, self._settings.ems_password.get_secret_value())
+        resource = await self._smtp.send_message(msg)
+        self._smtp.close()
+        return resource
 
     def create_email_message(self,
                              email: EmailStr,
@@ -74,20 +84,22 @@ class EmailMessageService(BaseAccessor):
             msg.add_alternative(html_text, subtype='html')
         return msg
 
-    async def create_and_sent(self,
-                              email: EmailStr,
-                              subject: str,
-                              text: str,
-                              html_text: str = None,
-                              ) -> EmailMessage:
-        """Create and send a message to a specific email address.
-
-        Args:
-            email: Email
-            subject: Email subject
-            text: Email text
-            html_text: html Email text
-        """
-        msg = self.create_email_message(email, subject, text, html_text)
-        await self.send(msg)
-        return msg
+    async def send_message_to_confirm_email(self, email: EmailStr, name: str, token: str, link: str) -> Tuple[
+        Dict[str, SMTPResponse], str]:
+        """Send message to confirm email."""
+        subject = 'Service My blog - Verifier of the email address'
+        text = EMAIL_VERIFIER_TEXT.format(name=name, token=token)
+        htm_text = TEMPLATE_HTML_TEXT.format(
+            **{
+                'name': name,
+                'title': 'Подтверждение адреса электронной почты',
+                'text': 'Для завершения регистрации требуется подтвердить'
+                        ' адрес электронной почты:',
+                'link': link,
+                'token': token,
+                'label': 'подтвердить',
+            },
+        )
+        msg = self.create_email_message(email, subject, text, htm_text)
+        response = await self.send(msg)
+        return response
