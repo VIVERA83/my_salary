@@ -107,9 +107,8 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
             ic(token)
             assert -2 == await self.cache.ttl(token.token), \
                 f"The token {token.type} is blocked, an attempt to log in using the old token, a new token is needed"
-            assert token.exp > int(
-                datetime.now().timestamp()
-            ), f"The '{token.type}' token has expired."
+            assert token.exp > int(datetime.now().timestamp()), \
+                f"The '{token.type}' token has expired."
             jws.verify(
                 token.token,
                 self.settings.auth_key.get_secret_value(),
@@ -132,11 +131,11 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
             path: endpoint path to check permissions
             method: method to check permissions
         """
+        ic(token_type, path)
         match token_type, path:
             case "anonymous", path:
-                if bool(self.public_access.count([path, method.upper()])):
+                if self.public_access.count([path, method.upper()]):
                     return True
-                detail = "Access denied"
             case "recovery", "/api/v1/reset_password":
                 return True
             case "verif", "/api/v1/reset_password":
@@ -150,8 +149,6 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
                     "/api/v1/registration_user",
                 ]:
                     return True
-            case _:
-                return False
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     @staticmethod
