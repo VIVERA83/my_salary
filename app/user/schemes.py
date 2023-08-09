@@ -1,9 +1,7 @@
 """Schemas сервиса Авторизации (AUTH)."""
-import json
 from hashlib import sha256
 from uuid import UUID
 
-from jose import jws
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
@@ -53,9 +51,9 @@ class UserSchemaRegistration(BaseSchema):
 
     @field_validator("password_confirmation")
     def passwords_match(
-        cls,  # noqa
-        password_confirmation: str,
-        values: FieldValidationInfo,
+            cls,  # noqa
+            password_confirmation: str,
+            values: FieldValidationInfo,
     ) -> str:
         """Password comparison.
 
@@ -118,49 +116,18 @@ class OkSchema(BaseModel):
     message: str = "Successfully"
 
 
-class TokenSchema(BaseModel):
-    """Token."""
-
-    token: str
-    headers: "HeadersTokenSchema" = Field(title="header", description="Заголовок")
-    payload: "PayloadTokenSchema" = Field(
-        title="payload",
-        description="Полезная нагрузка",
-    )
-
-    def __init__(self, token: str) -> None:
-        """Construct TokenSchema.
-
-        Args:
-            token: jwt token
-        """
-        token = token
-        payload_data = json.loads(jws.get_unverified_claims(token))
-        payload_data.update(payload_data.pop("subject"))
-        payload = PayloadTokenSchema(**payload_data)
-        headers = HeadersTokenSchema(**jws.get_unverified_headers(token))
-        TokenSchema.model_rebuild()
-        super().__init__(payload=payload, headers=headers, token=token)
-
-
 class RefreshSchema(BaseSchema):
     """Scheme for returning token after method /refresh."""
 
     access_token: str
 
 
-class HeadersTokenSchema(BaseModel):
-    """Token header."""
-
-    algorithm: str = Field(alias="alg")
-    type: str = Field(alias="typ")
-
-
-class PayloadTokenSchema(BaseModel):
-    """Token Payload."""
-
+class TokenSchema(BaseModel):
+    """Token."""
+    token: str
+    alg: str
     exp: int
     iat: int
+    email: str
+    user_id: str
     type: str
-    email: EmailStr = EMAIL
-    user_id: UUID = Field(title="уникальный идентификатор пользователя")

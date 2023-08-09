@@ -1,6 +1,5 @@
-from icecream import ic
-
 from base.base_accessor import BaseAccessor
+from icecream import ic
 
 
 class CacheAccessor(BaseAccessor):

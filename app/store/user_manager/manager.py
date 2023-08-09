@@ -4,13 +4,11 @@ from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import AuthorizationSettings
-from fastapi import Response
+from core.utils import Token
+from fastapi import Response, Request
 from icecream import ic
 from pydantic import EmailStr
-
-from core.utils import Token
 from store.user_manager.utils import User, set_cookie, unset_cookie
-from user.schemes import TokenSchema
 
 NAME = Dict["name", str]
 EMAIL = Dict["email", EmailStr]
@@ -109,26 +107,19 @@ class UserManager(BaseAccessor):
         await self.app.store.cache.set(token, user_id, expire + 5)
         await self.app.store.auth.add_refresh_token_to_user(user_id)
 
-    async def refresh(self, request, response: Response) -> dict[USER_DATA_KEY, Any]:
+    async def refresh(self, request: Request, response: Response) -> dict[USER_DATA_KEY, Any]:
         """Refresh the user tokens."""
         token_raw = request.cookies.get("refresh")
         assert token_raw, "Refresh token cookie is missing"
-        ic(token_raw)
-        token = TokenSchema(token_raw)
-        user = await self.app.store.auth.get_user_by_id_and_refresh_token(
-            token.payload.user_id.hex, token.token
-        )
+        token = Token(token_raw)
+        user = await self.app.store.auth.get_user_by_email(token.email)
         assert user, "User not found"
-        access_token, refresh_token = self.create_access_refresh_cookie(
-            user.id, user.email, response
-        )
+        access_token, refresh_token = self.create_access_refresh_cookie(user.id.hex, user.email, response,
+                                                                        request.client.host)
         return {**user.as_dict(), "access_token": access_token}
 
-    def create_access_refresh_cookie(
-            self, user_id: str, email: EmailStr, response: Response
-    ) -> [str, str]:
-        access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(
-            user_id, email
-        )
-        set_cookie("refresh", refresh_token, response, self.settings.auth_refresh_expires_delta)
+    def create_access_refresh_cookie(self, user_id: str, email: EmailStr, response: Response, domain: str) -> [str,
+                                                                                                               str]:
+        access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(user_id, email)
+        set_cookie("refresh", refresh_token, response, self.settings.auth_refresh_expires_delta, domain=domain)
         return access_token, refresh_token

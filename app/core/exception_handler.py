@@ -1,14 +1,13 @@
 import logging
+import re
 import traceback
 from logging import Logger
 
+from core.utils import HTTP_EXCEPTION
 from httpcore import URL
 from icecream import ic
 from starlette import status
 from starlette.responses import JSONResponse
-import re
-
-from core.utils import HTTP_EXCEPTION
 
 
 class ExceptionHandler:

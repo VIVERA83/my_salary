@@ -5,8 +5,9 @@ from typing import Any
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
-from user.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
-                          UserSchemaOut, UserSchemaRegistration)
+from user.schemes import (OkSchema, RefreshSchema, TokenSchema,
+                          UserSchemaLogin, UserSchemaOut,
+                          UserSchemaRegistration)
 from user.utils import (description_create_user, description_login_user,
                         description_logout_user, description_refresh_tokens,
                         description_registration_user)
@@ -23,8 +24,8 @@ auth_route = APIRouter(prefix="/api/v1")
     response_model=OkSchema,
 )
 async def create_user(
-    request: "Request",
-    user: UserSchemaRegistration,
+        request: "Request",
+        user: UserSchemaRegistration,
 ) -> Any:
     """A temporary user record is created in the temporary storage.
 
@@ -134,17 +135,15 @@ async def refresh(request: "Request", response: Response) -> Any:
     "/token",
     summary="Проверить токен доступа",
     tags=["AUTH"],
-    response_model=OkSchema,
+    response_model=TokenSchema,
 )
-def get_token(
-    authorization=Depends(HTTPBearer(auto_error=True)),
-) -> Any:  # noqa
+def get_token(request: Request, authorization=Depends(HTTPBearer(auto_error=True))) -> Any:  # noqa
     """Returns Ok.
 
     Args:
         authorization: str. The authorization
-
+        request: Request
     Returns:
-        optional: ok if authorization is valid
+        optional: token object
     """
-    return OkSchema()
+    return TokenSchema(**request.state.token.as_dict)

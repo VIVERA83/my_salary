@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Literal
 
 from jose import jws
@@ -88,7 +88,12 @@ class Token:
     def __init__(self, token: str = None):
         data = {"token": token}
         if token:
+            data.update(jws.get_unverified_headers(token))
             data.update(json.loads(jws.get_unverified_claims(token)))
             data.update(data.pop("subject", {}))
         for key, value in data.items():
             setattr(self, key, value)
+
+    @property
+    def as_dict(self):
+        return asdict(self)

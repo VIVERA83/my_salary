@@ -1,6 +1,12 @@
 """Middleware приложения."""
 import re
 from datetime import datetime
+
+from core.components import Application
+from core.components import Request as RequestApp
+from core.exception_handler import ExceptionHandler
+from core.settings import AuthorizationSettings, Settings
+from core.utils import PUBLIC_ACCESS, Token
 from fastapi import HTTPException, status
 from icecream import ic
 from jose import JWSError, jws
@@ -12,12 +18,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 from store.cache.accessor import CacheAccessor
-
-from core.components import Application
-from core.components import Request as RequestApp
-from core.settings import AuthorizationSettings, Settings
-from core.utils import PUBLIC_ACCESS, Token
-from core.exception_handler import ExceptionHandler
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
@@ -151,8 +151,8 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
                     return True
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    @staticmethod
-    def extract_token(request: "Request") -> "Token":
+    # @staticmethod
+    def extract_token(self, request: "Request") -> "Token":
         """Попытка получить token из headers (authorization Bear).
 
         Args:
