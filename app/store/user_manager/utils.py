@@ -1,7 +1,34 @@
+import json
+from dataclasses import asdict, dataclass
 from datetime import datetime
+from enum import Enum
+from uuid import uuid4
 
 from fastapi import Response
-from icecream import ic
+from pydantic import EmailStr
+
+
+@dataclass
+class User:
+    email: EmailStr
+    password: str
+    id: str = uuid4().hex
+    name: str = "Пользователь"
+    is_superuser: bool = None
+    refresh_token: str = None
+    access_token: str = None
+
+    @property
+    def as_dict(self):
+        return asdict(self)
+
+    @property
+    def as_string(self):
+        return json.dumps(self.as_dict)
+
+
+class TokenType(Enum):
+    verification = "verification"
 
 
 def set_cookie(key: str, value: str, response: "Response", expire: int, httponly: bool = True):

@@ -36,3 +36,4 @@ async def create_topic(request: Request, topic: TopicSchemaIn) -> Any:
 async def update_topic(request: Request, topic: TopicSchemaUpdateIn) -> Any:
     topic_data = await request.app.store.blog.update_topic(**topic.model_dump())
     return TopicSchemaOut(**topic_data.as_dict())
+# https://opyat-remont.ru/test?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWJqZWN0Ijp7InVzZXJfaWQiOiJkOWFmMTViMDhmZDY0N2ZmOTA2ZDM4MzM3NGQ3YTI5ZiIsImVtYWlsIjoidml2ZXJhODNAYmsucnUifSwidHlwZSI6InZlcmlmaWNhdGlvbiIsImV4cCI6MTY5MTc1NDUyMywiaWF0IjoxNjkxNTgyNTIzLCJqdGkiOiI4OTgwNzZhMWRhZmU0N2Q5YWRlNzA5NDIwZjQ4YjVkMiJ9.7AY3gNchzMtmsGnZcZWE2oyJMkp9lmhHC-zvdGTbass

@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from user.schemes import (OkSchema, RefreshSchema, UserSchemaLogin,
                           UserSchemaOut, UserSchemaRegistration)
-from user.utils import description_create_user, description_registration_user, description_logout_user, \
-    description_refresh_tokens, description_login_user
+from user.utils import (description_create_user, description_login_user,
+                        description_logout_user, description_refresh_tokens,
+                        description_registration_user)
 
 auth_route = APIRouter(prefix="/api/v1")
 
@@ -60,8 +61,7 @@ async def user_registration(request: "Request", response: Response) -> Any:
         request: Request
         response: Response
     """
-    email = request.state.token.payload.email
-    return await request.app.store.auth_manager.user_registration(email, response)
+    return await request.app.store.auth_manager.user_registration(request.state.token, response)
 
 
 @auth_route.post(
@@ -105,7 +105,7 @@ async def logout(request: "Request", response: Response) -> Any:
     """
     token = request.state.token
     await request.app.store.auth_manager.logout(
-        response, request.state.user_id, token.token, token.payload.exp
+        response, token.user_id, token.token, token.exp
     )
     return OkSchema()
 

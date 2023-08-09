@@ -1,15 +1,15 @@
 import json
-from dataclasses import asdict, dataclass
-from enum import Enum
 from typing import Any, Dict, Literal
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import AuthorizationSettings
-from fastapi import Response, status
+from fastapi import Response
 from icecream import ic
 from pydantic import EmailStr
-from store.user_manager.utils import set_cookie, unset_cookie
+
+from core.utils import Token
+from store.user_manager.utils import User, set_cookie, unset_cookie
 from user.schemes import TokenSchema
 
 NAME = Dict["name", str]
@@ -25,31 +25,11 @@ USER_DATA_KEY = Literal[
 ]
 
 CREATE_USER_DATA = Dict[NAME | EMAIL, Any]
-
+USER_DATA = Dict[
+    NAME,
+    EMAIL,
+]
 ic.includeContext = True
-
-
-@dataclass
-class User:
-    email: EmailStr
-    password: str
-    id: str = uuid4().hex
-    name: str = "Пользователь"
-    is_superuser: bool = None
-    refresh_token: str = None
-    access_token: str = None
-
-    @property
-    def as_dict(self):
-        return asdict(self)
-
-    @property
-    def as_string(self):
-        return json.dumps(self.as_dict)
-
-
-class TokenType(Enum):
-    verification = "verification"
 
 
 class UserManager(BaseAccessor):
@@ -85,20 +65,20 @@ class UserManager(BaseAccessor):
 
         token = self.app.store.token.create_verification_token(uuid4().hex, user.email)
         await self.app.store.cache.set(user.email, user.as_string, 1800000)
+        ic(token)
         await self.app.store.ems.send_message_to_confirm_email(
             user.email, user.name, token, link="test"
         )
         return user
 
-    async def user_registration(
-        self, email: EmailStr, response: Response
-    ) -> dict[USER_DATA_KEY, Any]:
+    async def user_registration(self, token: Token, response: Response) -> dict[USER_DATA_KEY, Any]:
         """Registration new user.
 
         Save in database user data, creates tokens."""
-        user_data = json.loads(await self.app.store.cache.get(email))
+        user_data = await self.app.store.cache.get(token.email)
         assert user_data, "User data, not found, please try again creating user"
-        user = User(**user_data)
+        user = User(**json.loads(user_data))
+
         async with self.app.postgres.session.begin().session as session:
             new_user = await self.app.store.auth.create_user(
                 user.name, user.email, user.password, user.is_superuser, False
@@ -107,12 +87,10 @@ class UserManager(BaseAccessor):
                 new_user.id, new_user.name, new_user.email, False
             )
             session.add_all([new_user, user_blog])
-            access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(
-                new_user.id.hex, new_user.email
+            access_token, refresh_token = self.create_access_refresh_cookie(
+                new_user.id.hex, new_user.email, response
             )
-            set_cookie(
-                "refresh", refresh_token, response, self.settings.auth_refresh_expires_delta
-            )
+            await self.app.store.cache.set(token.token, new_user.id.hex, self.settings.auth_access_expires_delta)
             await session.commit()
         return {**new_user.as_dict(), "access_token": access_token}
 
@@ -121,7 +99,10 @@ class UserManager(BaseAccessor):
         user = await self.app.store.auth.get_user_by_email(user_data["email"])
         assert user, "User not found"
         assert user.password == user_data["password"], "Password is incorrect"
-        return self.app.store.token.create_access_and_refresh_tokens(user.id, user.email)
+        access_token, refresh_token = self.create_access_refresh_cookie(
+            user.id.hex, user.email, response
+        )
+        return {**user.as_dict(), "access_token": access_token}
 
     async def logout(self, response: Response, user_id: str, token: str, expire: int):
         unset_cookie("refresh", response)
@@ -131,19 +112,23 @@ class UserManager(BaseAccessor):
     async def refresh(self, request, response: Response) -> dict[USER_DATA_KEY, Any]:
         """Refresh the user tokens."""
         token_raw = request.cookies.get("refresh")
-        assert token_raw, [
-            "Refresh token cookie is missing",
-            status.HTTP_400_BAD_REQUEST,
-        ]
+        assert token_raw, "Refresh token cookie is missing"
         ic(token_raw)
         token = TokenSchema(token_raw)
         user = await self.app.store.auth.get_user_by_id_and_refresh_token(
             token.payload.user_id.hex, token.token
         )
-        assert user, ["User not found", status.HTTP_401_UNAUTHORIZED]
+        assert user, "User not found"
+        access_token, refresh_token = self.create_access_refresh_cookie(
+            user.id, user.email, response
+        )
+        return {**user.as_dict(), "access_token": access_token}
 
-        access_token, refresh_token = await self.app.store.token.create_access_and_refresh_tokens(
-            user.id, user.email
+    def create_access_refresh_cookie(
+            self, user_id: str, email: EmailStr, response: Response
+    ) -> [str, str]:
+        access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(
+            user_id, email
         )
         set_cookie("refresh", refresh_token, response, self.settings.auth_refresh_expires_delta)
-        return {**user.as_dict(), "access_token": access_token}
+        return access_token, refresh_token

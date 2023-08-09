@@ -3,7 +3,7 @@ import logging
 from typing import Any, Optional
 
 from core.settings import Settings
-from core.utils import METHODS, PUBLIC_ACCESS
+from core.utils import METHODS, PUBLIC_ACCESS, Token
 from fastapi import FastAPI
 from fastapi import Request as FastAPIRequest
 from fastapi.openapi.utils import get_openapi
@@ -11,7 +11,6 @@ from starlette.datastructures import State
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
 from store.store import Store
-from user.schemes import TokenSchema
 
 
 class Application(FastAPI):
@@ -64,7 +63,7 @@ class Application(FastAPI):
         is_free = False
         free_method = None
         for f_p, f_m in self.free_access:
-            if url[1:] == f_p:
+            if url == f_p:
                 is_free = True
                 free_method = f_m
         return is_free, free_method
@@ -99,5 +98,5 @@ class CustomState(State):
     Для корректной подсказки IDE по методам `Request`.
     """
 
-    token: Optional["TokenSchema"]
+    token: Optional["Token"]
     user_id: Optional[str] = None

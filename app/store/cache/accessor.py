@@ -1,3 +1,5 @@
+from icecream import ic
+
 from base.base_accessor import BaseAccessor
 
 
@@ -37,4 +39,13 @@ class CacheAccessor(BaseAccessor):
         Returns:
             obj: The lifetime in seconds, if not found return -2, if timeless return -1
         """
+
         return await self.app.redis.connector.ttl(name=name)
+
+    async def delete(self, name: str) -> bool:
+        """Delete one or more keys specified by 'names'.
+
+        Args:
+            name: The name of the cache
+       """
+        return ic(await self.app.redis.connector.delete(name))
