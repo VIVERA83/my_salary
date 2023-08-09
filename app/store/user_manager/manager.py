@@ -48,25 +48,15 @@ class UserManager(BaseAccessor):
         """
         user = User(**user_data)
         seconds = await self.app.store.cache.ttl(user.email)
-        assert -1 > seconds, (
-            "A letter has been sent to this email address '{email}',"
-            " check the email or the address is not specified correctly."
-            "Resending an email is possible after {seconds} seconds".format(
-                email=user.email, seconds=seconds
-            )
-        )
-        assert not await self.app.store.auth.get_user_by_email(
-            user.email
-        ), "Email is already in use, try other email address, not these '{email}'".format(
-            email=user.email
-        )
-
+        assert -1 > seconds, \
+            (f"A letter has been sent to this email address '{user.email}',"
+             f" check the email or the address is not specified correctly."
+             f"Resending an email is possible after {seconds} seconds")
+        assert not await self.app.store.auth.get_user_by_email(user.email), \
+            f"Email is already in use, try other email address, not these '{user.email}'"
         token = self.app.store.token.create_verification_token(uuid4().hex, user.email)
-        await self.app.store.cache.set(user.email, user.as_string, 1800000)
-        ic(token)
-        await self.app.store.ems.send_message_to_confirm_email(
-            user.email, user.name, token, link="test"
-        )
+        await self.app.store.cache.set(user.email, user.as_string, 180)
+        await self.app.store.ems.send_message_to_confirm_email(user.email, user.name, token, link="test")
         return user
 
     async def user_registration(self, token: Token, response: Response) -> dict[USER_DATA_KEY, Any]:
@@ -85,9 +75,7 @@ class UserManager(BaseAccessor):
                 new_user.id, new_user.name, new_user.email, False
             )
             session.add_all([new_user, user_blog])
-            access_token, refresh_token = self.create_access_refresh_cookie(
-                new_user.id.hex, new_user.email, response
-            )
+            access_token, refresh_token = self.create_access_refresh_cookie(new_user.id.hex, new_user.email, response)
             await self.app.store.cache.set(token.token, new_user.id.hex, self.settings.auth_access_expires_delta)
             await session.commit()
         return {**new_user.as_dict(), "access_token": access_token}
@@ -97,9 +85,7 @@ class UserManager(BaseAccessor):
         user = await self.app.store.auth.get_user_by_email(user_data["email"])
         assert user, "User not found"
         assert user.password == user_data["password"], "Password is incorrect"
-        access_token, refresh_token = self.create_access_refresh_cookie(
-            user.id.hex, user.email, response
-        )
+        access_token, refresh_token = self.create_access_refresh_cookie(user.id.hex, user.email, response)
         return {**user.as_dict(), "access_token": access_token}
 
     async def logout(self, response: Response, user_id: str, token: str, expire: int):
@@ -118,8 +104,19 @@ class UserManager(BaseAccessor):
                                                                         request.client.host)
         return {**user.as_dict(), "access_token": access_token}
 
-    def create_access_refresh_cookie(self, user_id: str, email: EmailStr, response: Response, domain: str) -> [str,
-                                                                                                               str]:
+    def create_access_refresh_cookie(self,
+                                     user_id: str,
+                                     email: EmailStr,
+                                     response: Response,
+                                     domain: str = None) -> [str, str]:
+        """Create access and refresh cookie, and add refresh token to cookie.
+
+        Args:
+            user_id: the identifier of the user
+            email: user email
+            response: Response
+            domain: domain name
+        """
         access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(user_id, email)
         set_cookie("refresh", refresh_token, response, self.settings.auth_refresh_expires_delta, domain=domain)
         return access_token, refresh_token
