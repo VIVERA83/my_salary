@@ -2,7 +2,6 @@
 
 from typing import Any
 
-from icecream import ic
 from pydantic import EmailStr
 
 from core.components import Request
@@ -10,7 +9,7 @@ from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from user.schemes import (OkSchema, RefreshSchema, TokenSchema,
                           UserSchemaLogin, UserSchemaOut,
-                          UserSchemaRegistration, EMAIL, UserSchemaResetPasswordIn)
+                          UserSchemaRegistration)
 from user.utils import (description_create_user, description_login_user,
                         description_logout_user, description_refresh_tokens,
                         description_registration_user)

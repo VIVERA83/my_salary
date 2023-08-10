@@ -140,11 +140,7 @@ class UserManager(BaseAccessor):
              f" check the email or the address is not specified correctly."
              f"Resending an email is possible after {seconds} seconds")
         token = self.app.store.token.create_reset_token(user.id.hex, user.email)
-        ic(1)
         await self.app.store.ems.send_message_to_reset_password(
             user.email, user.name, token, "reset_ password")
-        ic(2)
         await self.app.store.cache.set(user.email, token, 180)
-        ic(user)
         return user
-# https://opyat-remont.ru/test?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWJqZWN0Ijp7InVzZXJfaWQiOiJiNzE0NDU2NjE5MWM0MzljYmNkMTVmZjFjYWQ4YTMzMiIsImVtYWlsIjoidml2ZXJhODNAeWFuZGV4LnJ1In0sInR5cGUiOiJ2ZXJpZmljYXRpb24iLCJleHAiOjE2OTE2NTM1NTIsImlhdCI6MTY5MTY1MzM3MiwianRpIjoiOGM1YWY5MjRmMmU2NGI0YjlmYmNlOTJiZGM2NTFmNzgifQ.CLAl41w_IJKnvLztG9sQxONbxd_ayBOuebL2ZKfMtLY
