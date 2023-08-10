@@ -55,6 +55,7 @@ class UserManager(BaseAccessor):
         assert not await self.app.store.auth.get_user_by_email(user.email), \
             f"Email is already in use, try other email address, not these '{user.email}'"
         token = self.app.store.token.create_verification_token(uuid4().hex, user.email)
+        ic("create token ",token)
         await self.app.store.cache.set(user.email, user.as_string, 180)
         await self.app.store.ems.send_message_to_confirm_email(user.email, user.name, token, link="test")
         return user
@@ -120,3 +121,30 @@ class UserManager(BaseAccessor):
         access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(user_id, email)
         set_cookie("refresh", refresh_token, response, self.settings.auth_refresh_expires_delta, domain=domain)
         return access_token, refresh_token
+
+    async def reset_password(self, email: EmailStr):
+        """Initializing reset user password.
+
+        1. Check user_id in cache.
+        2. Check user email
+        3. Create token for new password
+        4. Send an email with a token to change password
+        5. Add cache token.
+        """
+
+        user = await self.app.store.auth.get_user_by_email(email)
+        assert user, f"User with email address {email} not found."
+        seconds = await self.app.store.cache.ttl(user.email)
+        assert -1 > seconds, \
+            (f"A letter has been sent to this email address '{user.email}',"
+             f" check the email or the address is not specified correctly."
+             f"Resending an email is possible after {seconds} seconds")
+        token = self.app.store.token.create_reset_token(user.id.hex, user.email)
+        ic(1)
+        await self.app.store.ems.send_message_to_reset_password(
+            user.email, user.name, token, "reset_ password")
+        ic(2)
+        await self.app.store.cache.set(user.email, token, 180)
+        ic(user)
+        return user
+# https://opyat-remont.ru/test?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWJqZWN0Ijp7InVzZXJfaWQiOiJiNzE0NDU2NjE5MWM0MzljYmNkMTVmZjFjYWQ4YTMzMiIsImVtYWlsIjoidml2ZXJhODNAeWFuZGV4LnJ1In0sInR5cGUiOiJ2ZXJpZmljYXRpb24iLCJleHAiOjE2OTE2NTM1NTIsImlhdCI6MTY5MTY1MzM3MiwianRpIjoiOGM1YWY5MjRmMmU2NGI0YjlmYmNlOTJiZGM2NTFmNzgifQ.CLAl41w_IJKnvLztG9sQxONbxd_ayBOuebL2ZKfMtLY

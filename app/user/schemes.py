@@ -122,12 +122,17 @@ class RefreshSchema(BaseSchema):
     access_token: str
 
 
+class UserSchemaResetPasswordIn(BaseSchema):
+    """Scheme for reset password ."""
+    email: EmailStr = EMAIL
+
+
 class TokenSchema(BaseModel):
     """Token."""
-    token: str
-    alg: str
-    exp: int
-    iat: int
-    email: str
-    user_id: str
+    token: str | None
+    alg: str | None
+    exp: str | None
+    iat: str | None
+    email: str | None
+    user_id: str | None
     type: str

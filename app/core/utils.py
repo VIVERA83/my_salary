@@ -34,19 +34,21 @@ HEADERS = Literal[
     "Authorization",
     "*",
 ]
-
 PUBLIC_ACCESS = [
+    ["/admin/*", "*"],
+
     ["/openapi.json", "GET"],
     ["/docs", "GET"],
-    ["/docs/oauth2-redirect", "GET"],
     ["/redoc", "GET"],
-    ["/api/v1/create_user", "POST"],
-    ["/api/v1/login", "POST"],
-    ["/api/v1/refresh", "GET"],
-    ["/admin/*", "*"],
-    # delete
-    ["/api/v1/test", "GET"],
+    ["/docs/oauth2-redirect", "GET"],
+
+    ["/auth/create_user", "POST"],
+    ["/auth/login", "POST"],
+    ["/auth/refresh", "GET"],
+    ["/auth/reset_password", "POST"],
+    ["/auth/reset_password", "GET"]
 ]
+
 
 METHODS = [
     "HEAD",

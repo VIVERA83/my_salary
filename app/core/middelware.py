@@ -136,23 +136,23 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
             case "anonymous", path:
                 if self.public_access.count([path, method.upper()]):
                     return True
-            case "recovery", "/api/v1/reset_password":
+            case "recovery", "/auth/reset_password":
                 return True
-            case "verif", "/api/v1/reset_password":
+            case "verif", "/auth/reset_password":
                 return True
-            case "verification", "/api/v1/registration_user":
+            case "verification", "/auth/registration_user":
                 return True
             case "access", path:
                 if path not in [
-                    "/api/v1/reset_password",
-                    "/api/v1/create_user",
-                    "/api/v1/registration_user",
+                    "/auth/reset_password",
+                    "/auth/create_user",
+                    "/auth/registration_user",
                 ]:
                     return True
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    # @staticmethod
-    def extract_token(self, request: "Request") -> "Token":
+    @staticmethod
+    def extract_token(request: "Request") -> "Token":
         """Попытка получить token из headers (authorization Bear).
 
         Args:

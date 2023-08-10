@@ -41,7 +41,7 @@ class TokenAccessor(BaseAccessor):
             "user_id": user_id,
             "email": email,
         }
-        return self.create_token("access", subject, 1800)
+        return self.create_token("access", subject, 600)
 
     def create_refresh_token(self, user_id: str, email: EmailStr) -> str:
         subject = {
@@ -55,7 +55,14 @@ class TokenAccessor(BaseAccessor):
             "user_id": user_id,
             "email": email,
         }
-        return self.create_token("verification", subject, 172000)
+        return self.create_token("verification", subject, 180)
+
+    def create_reset_token(self, user_id: str, email: EmailStr) -> str:
+        subject = {
+            "user_id": user_id,
+            "email": email,
+        }
+        return self.create_token("reset", subject, 180)
 
         # self.access_security = JwtAccessBearer(
         #     secret_key=self.settings.auth_key.get_secret_value(),

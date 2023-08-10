@@ -2,22 +2,24 @@
 
 from typing import Any
 
+from icecream import ic
+from pydantic import EmailStr
+
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from user.schemes import (OkSchema, RefreshSchema, TokenSchema,
                           UserSchemaLogin, UserSchemaOut,
-                          UserSchemaRegistration)
+                          UserSchemaRegistration, EMAIL, UserSchemaResetPasswordIn)
 from user.utils import (description_create_user, description_login_user,
                         description_logout_user, description_refresh_tokens,
                         description_registration_user)
 
-auth_route = APIRouter(prefix="/api/v1")
+auth_route = APIRouter(prefix="/auth", tags=["AUTH"])
 
 
 @auth_route.post(
     "/create_user",
-    tags=["AUTH"],
     summary="Создание учетной записи пользователя",
     description=description_create_user,
     response_description="Анкетные данные пользователя, кроме секретных данных.",
@@ -40,13 +42,12 @@ async def create_user(
     Returns:
         object: UserSchemaOut
     """
-    await request.app.store.auth_manager.create_user(**user.model_dump())
-    return OkSchema(message="Temporary user record and sent verification email successfully")
+    temp_user = await request.app.store.auth_manager.create_user(**user.model_dump())
+    return OkSchema(message=f"Sent  letter  to  {temp_user.email}, for verification email addresses")
 
 
 @auth_route.get(
     "/registration_user",
-    tags=["AUTH"],
     summary="Регистрация пользователя",
     description=description_registration_user,
     response_description="Анкетные данные пользователя, кроме секретных данных.",
@@ -70,7 +71,6 @@ async def user_registration(request: "Request", response: Response) -> Any:
     summary="Авторизация",
     description=description_login_user,
     response_description="Анкетные данные пользователя, кроме секретных данных.",
-    tags=["AUTH"],
     response_model=UserSchemaOut,
 )
 async def login(request: "Request", response: Response, user: UserSchemaLogin) -> Any:
@@ -88,10 +88,28 @@ async def login(request: "Request", response: Response, user: UserSchemaLogin) -
 
 
 @auth_route.get(
+    "/refresh",
+    summary="Обновить токен доступа",
+    description=description_refresh_tokens,
+    response_model=RefreshSchema,
+)
+async def refresh(request: "Request", response: Response) -> Any:
+    """Update tokens.
+
+    Args:
+        request: "Request"
+        response: Response
+
+    Returns:
+        Response or HTTPException 401 UNAUTHORIZED
+    """
+    return await request.app.store.auth_manager.refresh(request, response)
+
+
+@auth_route.get(
     "/logout",
     summary="Выход",
     description=description_logout_user,
-    tags=["AUTH"],
     response_model=OkSchema,
 )
 async def logout(request: "Request", response: Response) -> Any:
@@ -112,29 +130,8 @@ async def logout(request: "Request", response: Response) -> Any:
 
 
 @auth_route.get(
-    "/refresh",
-    summary="Обновить токен доступа",
-    description=description_refresh_tokens,
-    tags=["AUTH"],
-    response_model=RefreshSchema,
-)
-async def refresh(request: "Request", response: Response) -> Any:
-    """Update tokens.
-
-    Args:
-        request: "Request"
-        response: Response
-
-    Returns:
-        Response or HTTPException 401 UNAUTHORIZED
-    """
-    return await request.app.store.auth_manager.refresh(request, response)
-
-
-@auth_route.get(
     "/token",
     summary="Проверить токен доступа",
-    tags=["AUTH"],
     response_model=TokenSchema,
 )
 def get_token(request: Request, authorization=Depends(HTTPBearer(auto_error=True))) -> Any:  # noqa
@@ -147,3 +144,21 @@ def get_token(request: Request, authorization=Depends(HTTPBearer(auto_error=True
         optional: token object
     """
     return TokenSchema(**request.state.token.as_dict)
+
+
+@auth_route.get(
+    "/reset_password",
+    summary="Инициализация сброса пароля",
+    response_model=OkSchema,
+)
+async def reset_password(request: Request, email: EmailStr) -> Any:
+    """Initializing reset user password.
+
+    Args:
+        request: Request
+        email: user email for initializing reset password
+    Returns:
+        optional: token object
+    """
+    user = await request.app.store.auth_manager.reset_password(email)
+    return OkSchema(message=f"Sent letter to {user.email}, for reset password")
