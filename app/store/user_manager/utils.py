@@ -31,7 +31,14 @@ class TokenType(Enum):
     verification = "verification"
 
 
-def set_cookie(key: str, value: str, response: "Response", expire: int, httponly: bool = True, domain: str = None):
+def set_cookie(
+    key: str,
+    value: str,
+    response: "Response",
+    expire: int,
+    httponly: bool = True,
+    domain: str = None,
+):
     """Adding a token to cookies.
 
     Args:
@@ -53,8 +60,8 @@ def set_cookie(key: str, value: str, response: "Response", expire: int, httponly
 
 
 def unset_cookie(
-        key: str,
-        response: "Response",
+    key: str,
+    response: "Response",
 ):
     """Removing a token from cookies.
 
@@ -63,5 +70,6 @@ def unset_cookie(
         key: name of the cookie
     """
     response.set_cookie(key=key, value="", httponly=True, max_age=-1)
+
 
 # eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWJqZWN0Ijp7InVzZXJfaWQiOiJjODdiNzZkOThkMWU0YzA2ODQ4Y2UxNDJiMGM5NjRlOSIsImVtYWlsIjoidml2ZXJhODNAeWFuZGV4LnJ1In0sInR5cGUiOiJ2ZXJpZmljYXRpb24iLCJleHAiOjE2OTE0NTI5NjYsImlhdCI6MTY5MTQzNDk2NiwianRpIjoiNjVkMDg3ZGNhMGNiNGRlZTkzODFhYzZmNjY4OTAwMTYifQ.icFhnh-tGF7_PseE1qJ-PThAqyjkTikkbIxMgCUvnwE

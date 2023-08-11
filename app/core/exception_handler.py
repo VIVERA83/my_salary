@@ -14,7 +14,7 @@ class ExceptionHandler:
     handlers = {}
 
     def __init__(
-            self,
+        self,
     ):
         self.exception = Exception("Unknown error...")
         self.logger = Logger(__name__)
@@ -24,11 +24,11 @@ class ExceptionHandler:
         self.is_traceback = False
 
     def __call__(
-            self,
-            exception: Exception,
-            url: URL,
-            logger: Logger = None,
-            is_traceback: bool = False,
+        self,
+        exception: Exception,
+        url: URL,
+        logger: Logger = None,
+        is_traceback: bool = False,
     ) -> JSONResponse:
         self.exception = exception
         self.logger = logger

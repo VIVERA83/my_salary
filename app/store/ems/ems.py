@@ -53,7 +53,7 @@ class EmailMessageService(BaseAccessor):
             self._smtp.close()
         self.logger.info("Disconnect SMTP server: {smtp}".format(smtp=self._settings.ems_host))
 
-    async def send(self, msg: EmailMessage) -> Tuple[Dict[str, SMTPResponse], str]:
+    async def send(self, msg: EmailMessage):
         """Send an outgoing email with the user's credentials.
 
         Args:
@@ -64,16 +64,16 @@ class EmailMessageService(BaseAccessor):
             await self._smtp.login(
                 self._settings.ems_user, self._settings.ems_password.get_secret_value()
             )
-        resource = await self._smtp.send_message(msg)
+        errors, message = await self._smtp.send_message(msg)
         self._smtp.close()
-        return resource
+        assert not errors, message
 
     def create_email_message(
-            self,
-            email: EmailStr,
-            subject: str,
-            text: str,
-            html_text: str = None,
+        self,
+        email: EmailStr,
+        subject: str,
+        text: str,
+        html_text: str = None,
     ) -> EmailMessage:
         """Create a new email.
 
@@ -94,8 +94,8 @@ class EmailMessageService(BaseAccessor):
         return msg
 
     async def send_message_to_confirm_email(
-            self, email: EmailStr, name: str, token: str, link: str
-    ) -> Tuple[Dict[str, SMTPResponse], str]:
+        self, email: EmailStr, name: str, token: str, link: str
+    ):
         """Send message to confirm email."""
         subject = "Service My blog - Verifier of the email address"
         text = EMAIL_VERIFIER_TEXT.format(name=name, token=token)
@@ -104,19 +104,18 @@ class EmailMessageService(BaseAccessor):
                 "name": name,
                 "title": "Подтверждение адреса электронной почты",
                 "text": "Для завершения регистрации требуется подтвердить"
-                        " адрес электронной почты:",
+                " адрес электронной почты:",
                 "link": link,
                 "token": token,
                 "label": "подтвердить",
             },
         )
         msg = self.create_email_message(email, subject, text, htm_text)
-        response = await self.send(msg)
-        return ic(response)
+        await self.send(msg)
 
     async def send_message_to_reset_password(
-            self, email: EmailStr, name: str, token: str, link: str
-    ) -> Tuple[Dict[str, SMTPResponse], str]:
+        self, email: EmailStr, name: str, token: str, link: str
+    ):
         """Send message to confirm email."""
         subject = "Service My blog - Verifier of the email address"
         text = EMAIL_VERIFIER_TEXT.format(name=name, token=token)
@@ -125,13 +124,12 @@ class EmailMessageService(BaseAccessor):
                 "name": name,
                 "title": "Сброс пароля",
                 "text": "Для сброса пароля необходимо перейти по ссылке. "
-                        "Обратите внимание старый пароль будет изменен"
-                        " только в момент внесения нового",
+                "Обратите внимание старый пароль будет изменен"
+                " только в момент внесения нового",
                 "link": link,
                 "token": token,
                 "label": "Сбросить",
             },
         )
         msg = self.create_email_message(email, subject, text, htm_text)
-        response = await self.send(msg)
-        return ic(response)
+        await self.send(msg)

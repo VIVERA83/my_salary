@@ -1,7 +1,8 @@
 from base.base_accessor import BaseAccessor
-from icecream import ic
+from base.utils import TryRun
 
 
+@TryRun(total_timeout=1)
 class CacheAccessor(BaseAccessor):
     """Authorization service."""
 
@@ -46,5 +47,5 @@ class CacheAccessor(BaseAccessor):
 
         Args:
             name: The name of the cache
-       """
-        return ic(await self.app.redis.connector.delete(name))
+        """
+        return await self.app.redis.connector.delete(name)

@@ -1,10 +1,12 @@
 from typing import Optional, Union
 
 from base.base_accessor import BaseAccessor
+from base.utils import TryRun
 from sqlalchemy import Delete, Insert, Update, and_, insert, select, update
 from store.user.models import UserModel
 
 
+@TryRun(total_timeout=15, group="postgres")
 class UserAccessor(BaseAccessor):
     """Authorization service."""
 
@@ -42,6 +44,7 @@ class UserAccessor(BaseAccessor):
             return await self.commit(smtp)
         return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
+    # @before_execution(raise_exception=True)
     async def get_user_by_email(self, email: str) -> Optional[UserModel]:
         """Get a user by email.
 

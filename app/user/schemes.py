@@ -51,9 +51,9 @@ class UserSchemaRegistration(BaseSchema):
 
     @field_validator("password_confirmation")
     def passwords_match(
-            cls,  # noqa
-            password_confirmation: str,
-            values: FieldValidationInfo,
+        cls,  # noqa
+        password_confirmation: str,
+        values: FieldValidationInfo,
     ) -> str:
         """Password comparison.
 
@@ -124,11 +124,13 @@ class RefreshSchema(BaseSchema):
 
 class UserSchemaResetPasswordIn(BaseSchema):
     """Scheme for reset password ."""
+
     email: EmailStr = EMAIL
 
 
 class TokenSchema(BaseModel):
     """Token."""
+
     token: str | None
     alg: str | None
     exp: str | None

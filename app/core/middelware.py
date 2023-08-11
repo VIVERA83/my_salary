@@ -80,9 +80,9 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
 
     async def dispatch(
-            self,
-            request: Request,
-            call_next: RequestResponseEndpoint,
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
     ) -> Response | None:
         """Checking access rights to a resource.
 
@@ -105,10 +105,12 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
     async def verify_token(self, token: Token):
         try:
             ic(token)
-            assert -2 == await self.cache.ttl(token.token), \
-                f"The token {token.type} is blocked, an attempt to log in using the old token, a new token is needed"
-            assert token.exp > int(datetime.now().timestamp()), \
-                f"The '{token.type}' token has expired."
+            assert -2 == await self.cache.ttl(
+                token.token
+            ), f"The token {token.type} is blocked, an attempt to log in using the old token, a new token is needed"
+            assert token.exp > int(
+                datetime.now().timestamp()
+            ), f"The '{token.type}' token has expired."
             jws.verify(
                 token.token,
                 self.settings.auth_key.get_secret_value(),

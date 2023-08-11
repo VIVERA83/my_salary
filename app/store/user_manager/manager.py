@@ -5,7 +5,7 @@ from uuid import uuid4
 from base.base_accessor import BaseAccessor
 from core.settings import AuthorizationSettings
 from core.utils import Token
-from fastapi import Response, Request
+from fastapi import Request, Response
 from icecream import ic
 from pydantic import EmailStr
 from store.user_manager.utils import User, set_cookie, unset_cookie
@@ -48,19 +48,25 @@ class UserManager(BaseAccessor):
         """
         user = User(**user_data)
         seconds = await self.app.store.cache.ttl(user.email)
-        assert -1 > seconds, \
-            (f"A letter has been sent to this email address '{user.email}',"
-             f" check the email or the address is not specified correctly."
-             f"Resending an email is possible after {seconds} seconds")
-        assert not await self.app.store.auth.get_user_by_email(user.email), \
-            f"Email is already in use, try other email address, not these '{user.email}'"
+        assert -1 > seconds, (
+            f"A letter has been sent to this email address '{user.email}',"
+            f" check the email or the address is not specified correctly."
+            f"Resending an email is possible after {seconds} seconds"
+        )
+        assert not await self.app.store.auth.get_user_by_email(
+            user.email
+        ), f"Email is already in use, try other email address, not these '{user.email}'"
         token = self.app.store.token.create_verification_token(uuid4().hex, user.email)
-        ic("create token ",token)
+        ic("create token ", token)
         await self.app.store.cache.set(user.email, user.as_string, 180)
-        await self.app.store.ems.send_message_to_confirm_email(user.email, user.name, token, link="test")
+        await self.app.store.ems.send_message_to_confirm_email(
+            user.email, user.name, token, link="test"
+        )
         return user
 
-    async def user_registration(self, token: Token, response: Response) -> dict[USER_DATA_KEY, Any]:
+    async def user_registration(
+        self, token: Token, response: Response
+    ) -> dict[USER_DATA_KEY, Any]:
         """Registration new user.
 
         Save in database user data, creates tokens."""
@@ -76,8 +82,12 @@ class UserManager(BaseAccessor):
                 new_user.id, new_user.name, new_user.email, False
             )
             session.add_all([new_user, user_blog])
-            access_token, refresh_token = self.create_access_refresh_cookie(new_user.id.hex, new_user.email, response)
-            await self.app.store.cache.set(token.token, new_user.id.hex, self.settings.auth_access_expires_delta)
+            access_token, refresh_token = self.create_access_refresh_cookie(
+                new_user.id.hex, new_user.email, response
+            )
+            await self.app.store.cache.set(
+                token.token, new_user.id.hex, self.settings.auth_access_expires_delta
+            )
             await session.commit()
         return {**new_user.as_dict(), "access_token": access_token}
 
@@ -86,7 +96,9 @@ class UserManager(BaseAccessor):
         user = await self.app.store.auth.get_user_by_email(user_data["email"])
         assert user, "User not found"
         assert user.password == user_data["password"], "Password is incorrect"
-        access_token, refresh_token = self.create_access_refresh_cookie(user.id.hex, user.email, response)
+        access_token, refresh_token = self.create_access_refresh_cookie(
+            user.id.hex, user.email, response
+        )
         return {**user.as_dict(), "access_token": access_token}
 
     async def logout(self, response: Response, user_id: str, token: str, expire: int):
@@ -101,15 +113,14 @@ class UserManager(BaseAccessor):
         token = Token(token_raw)
         user = await self.app.store.auth.get_user_by_email(token.email)
         assert user, "User not found"
-        access_token, refresh_token = self.create_access_refresh_cookie(user.id.hex, user.email, response,
-                                                                        request.client.host)
+        access_token, refresh_token = self.create_access_refresh_cookie(
+            user.id.hex, user.email, response, request.client.host
+        )
         return {**user.as_dict(), "access_token": access_token}
 
-    def create_access_refresh_cookie(self,
-                                     user_id: str,
-                                     email: EmailStr,
-                                     response: Response,
-                                     domain: str = None) -> [str, str]:
+    def create_access_refresh_cookie(
+        self, user_id: str, email: EmailStr, response: Response, domain: str = None
+    ) -> [str, str]:
         """Create access and refresh cookie, and add refresh token to cookie.
 
         Args:
@@ -118,11 +129,19 @@ class UserManager(BaseAccessor):
             response: Response
             domain: domain name
         """
-        access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(user_id, email)
-        set_cookie("refresh", refresh_token, response, self.settings.auth_refresh_expires_delta, domain=domain)
+        access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(
+            user_id, email
+        )
+        set_cookie(
+            "refresh",
+            refresh_token,
+            response,
+            self.settings.auth_refresh_expires_delta,
+            domain=domain,
+        )
         return access_token, refresh_token
 
-    async def reset_password(self, email: EmailStr):
+    async def reset_password(self, email: EmailStr) -> User:
         """Initializing reset user password.
 
         1. Check user_id in cache.
@@ -131,16 +150,28 @@ class UserManager(BaseAccessor):
         4. Send an email with a token to change password
         5. Add cache token.
         """
-
+        ic(0)
         user = await self.app.store.auth.get_user_by_email(email)
+        ic(3)
         assert user, f"User with email address {email} not found."
+        ic(2)
         seconds = await self.app.store.cache.ttl(user.email)
-        assert -1 > seconds, \
-            (f"A letter has been sent to this email address '{user.email}',"
-             f" check the email or the address is not specified correctly."
-             f"Resending an email is possible after {seconds} seconds")
+        ic(1)
+        assert -1 > seconds, (
+            f"A letter has been sent to this email address '{user.email}',"
+            f" check the email or the address is not specified correctly."
+            f"Resending an email is possible after {seconds} seconds"
+        )
         token = self.app.store.token.create_reset_token(user.id.hex, user.email)
+
+        assert await self.app.store.cache.set(
+            user.email, token, 180
+        ), f"Error set cache token, for {email}"
         await self.app.store.ems.send_message_to_reset_password(
-            user.email, user.name, token, "reset_ password")
-        await self.app.store.cache.set(user.email, token, 180)
+            user.email, user.name, token, "reset_ password"
+        )
+
         return user
+
+
+#         Контекстный менеджер для того что бы точно отправлялось письмо и сохранялся кэш

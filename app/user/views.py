@@ -2,11 +2,10 @@
 
 from typing import Any
 
-from pydantic import EmailStr
-
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
+from pydantic import EmailStr
 from user.schemes import (OkSchema, RefreshSchema, TokenSchema,
                           UserSchemaLogin, UserSchemaOut,
                           UserSchemaRegistration)
@@ -25,8 +24,8 @@ auth_route = APIRouter(prefix="/auth", tags=["AUTH"])
     response_model=OkSchema,
 )
 async def create_user(
-        request: "Request",
-        user: UserSchemaRegistration,
+    request: "Request",
+    user: UserSchemaRegistration,
 ) -> Any:
     """A temporary user record is created in the temporary storage.
 
@@ -42,7 +41,9 @@ async def create_user(
         object: UserSchemaOut
     """
     temp_user = await request.app.store.auth_manager.create_user(**user.model_dump())
-    return OkSchema(message=f"Sent  letter  to  {temp_user.email}, for verification email addresses")
+    return OkSchema(
+        message=f"Sent  letter  to  {temp_user.email}, for verification email addresses"
+    )
 
 
 @auth_route.get(
@@ -122,9 +123,7 @@ async def logout(request: "Request", response: Response) -> Any:
         object: OkSchema
     """
     token = request.state.token
-    await request.app.store.auth_manager.logout(
-        response, token.user_id, token.token, token.exp
-    )
+    await request.app.store.auth_manager.logout(response, token.user_id, token.token, token.exp)
     return OkSchema()
 
 

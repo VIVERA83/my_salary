@@ -1,12 +1,12 @@
 from typing import Optional, Union
-from uuid import UUID
 
 from base.base_accessor import BaseAccessor
-from icecream import ic
+from base.utils import TryRun
 from sqlalchemy import Delete, Insert, Update, insert
 from store.blog.models import TopicModel, UserModel
 
 
+@TryRun(total_timeout=20, group="postgres")
 class BlogAccessor(BaseAccessor):
     """Blog service."""
 

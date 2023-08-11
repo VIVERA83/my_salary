@@ -36,17 +36,15 @@ HEADERS = Literal[
 ]
 PUBLIC_ACCESS = [
     ["/admin/*", "*"],
-
     ["/openapi.json", "GET"],
     ["/docs", "GET"],
     ["/redoc", "GET"],
     ["/docs/oauth2-redirect", "GET"],
-
     ["/auth/create_user", "POST"],
     ["/auth/login", "POST"],
     ["/auth/refresh", "GET"],
     ["/auth/reset_password", "POST"],
-    ["/auth/reset_password", "GET"]
+    ["/auth/reset_password", "GET"],
 ]
 
 

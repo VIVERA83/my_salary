@@ -22,7 +22,6 @@ class Application(FastAPI):
     postgres: Postgres
     logger: logging.Logger
 
-
 class Request(FastAPIRequest):
     """Переопределения Request.
 
@@ -41,7 +40,6 @@ class Request(FastAPIRequest):
              CustomState: state
         """
         return self._state
-
 
 class CustomState:
     """Переопределения State.
