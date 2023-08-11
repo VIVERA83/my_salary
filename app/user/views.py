@@ -2,13 +2,15 @@
 
 from typing import Any
 
+from icecream import ic
+
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from pydantic import EmailStr
 from user.schemes import (OkSchema, RefreshSchema, TokenSchema,
                           UserSchemaLogin, UserSchemaOut,
-                          UserSchemaRegistration)
+                          UserSchemaRegistration, UserPasswordSchema)
 from user.utils import (description_create_user, description_login_user,
                         description_logout_user, description_refresh_tokens,
                         description_registration_user)
@@ -24,8 +26,8 @@ auth_route = APIRouter(prefix="/auth", tags=["AUTH"])
     response_model=OkSchema,
 )
 async def create_user(
-    request: "Request",
-    user: UserSchemaRegistration,
+        request: "Request",
+        user: UserSchemaRegistration,
 ) -> Any:
     """A temporary user record is created in the temporary storage.
 
@@ -88,25 +90,6 @@ async def login(request: "Request", response: Response, user: UserSchemaLogin) -
 
 
 @auth_route.get(
-    "/refresh",
-    summary="Обновить токен доступа",
-    description=description_refresh_tokens,
-    response_model=RefreshSchema,
-)
-async def refresh(request: "Request", response: Response) -> Any:
-    """Update tokens.
-
-    Args:
-        request: "Request"
-        response: Response
-
-    Returns:
-        Response or HTTPException 401 UNAUTHORIZED
-    """
-    return await request.app.store.auth_manager.refresh(request, response)
-
-
-@auth_route.get(
     "/logout",
     summary="Выход",
     description=description_logout_user,
@@ -125,6 +108,25 @@ async def logout(request: "Request", response: Response) -> Any:
     token = request.state.token
     await request.app.store.auth_manager.logout(response, token.user_id, token.token, token.exp)
     return OkSchema()
+
+
+@auth_route.get(
+    "/refresh",
+    summary="Обновить токен доступа",
+    description=description_refresh_tokens,
+    response_model=RefreshSchema,
+)
+async def refresh(request: "Request", response: Response) -> Any:
+    """Update tokens.
+
+    Args:
+        request: "Request"
+        response: Response
+
+    Returns:
+        Response or HTTPException 401 UNAUTHORIZED
+    """
+    return await request.app.store.auth_manager.refresh(request, response)
 
 
 @auth_route.get(
@@ -156,7 +158,35 @@ async def reset_password(request: Request, email: EmailStr) -> Any:
         request: Request
         email: user email for initializing reset password
     Returns:
-        optional: token object
+        optional: OkSchema
     """
     user = await request.app.store.auth_manager.reset_password(email)
     return OkSchema(message=f"Sent letter to {user.email}, for reset password")
+
+
+@auth_route.post(
+    "/update_password",
+    summary="Задать новый пароль",
+    description="Enter password",
+    response_model=OkSchema,
+)
+async def update_password(request: Request, password: UserPasswordSchema) -> Any:
+    """Update user password.
+
+    Args:
+        request: Request
+        password: user password
+
+    Returns:
+        optional: OkSchema
+    """
+    await request.app.store.auth.update_password(request.state.user_id, password.password)
+    return OkSchema(message="Password changed successfully")
+
+
+@auth_route.get(
+    "/users"
+)
+async def get_users(request: Request) -> Any:
+    ic(await request.app.store.auth.get_users())
+    return OkSchema()

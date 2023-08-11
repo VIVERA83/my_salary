@@ -76,7 +76,7 @@ class UserManager(BaseAccessor):
 
         async with self.app.postgres.session.begin().session as session:
             new_user = await self.app.store.auth.create_user(
-                user.name, user.email, user.password, user.is_superuser, False
+                user.name, user.email, user.password, user.is_superuser
             )
             user_blog = await self.app.store.blog.create_user(
                 new_user.id, new_user.name, new_user.email, False
@@ -104,7 +104,7 @@ class UserManager(BaseAccessor):
     async def logout(self, response: Response, user_id: str, token: str, expire: int):
         unset_cookie("refresh", response)
         await self.app.store.cache.set(token, user_id, expire + 5)
-        await self.app.store.auth.add_refresh_token_to_user(user_id)
+        await self.app.store.auth.update_refresh_token(user_id)
 
     async def refresh(self, request: Request, response: Response) -> dict[USER_DATA_KEY, Any]:
         """Refresh the user tokens."""
@@ -165,6 +165,7 @@ class UserManager(BaseAccessor):
             raise ConnectionError(e.args[0])
 
         token = self.app.store.token.create_reset_token(user.id.hex, user.email)
+        ic(token)
         flag = False
         try:
             await self.app.store.cache.set(user.email, token, 180)
@@ -176,3 +177,4 @@ class UserManager(BaseAccessor):
             raise ConnectionError(e.args[0])
         else:
            return user
+

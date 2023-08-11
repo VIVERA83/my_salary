@@ -1,8 +1,11 @@
+from dataclasses import dataclass
 from typing import Optional, Union
+
+from icecream import ic
 
 from base.base_accessor import BaseAccessor
 from base.utils import TryRun
-from sqlalchemy import Delete, Insert, Update, and_, insert, select, update
+from sqlalchemy import Delete, Insert, Update, insert, select, update, Select
 from store.user.models import UserModel
 
 
@@ -11,13 +14,13 @@ class UserAccessor(BaseAccessor):
     """Authorization service."""
 
     async def create_user(
-        self,
-        name: str,
-        email: str,
-        password: str,
-        is_superuser: Optional[bool] = None,
-        is_commit: bool = True,
-    ) -> UserModel:
+            self,
+            name: str,
+            email: str,
+            password: str,
+            is_superuser: Optional[bool] = None,
+            is_commit: bool = True,
+    ) -> Optional[UserModel]:
         """Adding a new user to the database.
 
         Args:
@@ -40,57 +43,67 @@ class UserAccessor(BaseAccessor):
             )
             .returning(UserModel)
         )
+        ic(type(smtp))
         if is_commit:
-            return await self.commit(smtp)
+            if result := await self.commit(smtp):
+                return result[0]
+            return None
+
         return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
-    # @before_execution(raise_exception=True)
-    async def get_user_by_email(self, email: str) -> Optional[UserModel]:
+    async def get_user_by_email(self, email: str, is_commit: bool = True) -> Optional[UserModel]:
         """Get a user by email.
 
         Args:
             email: user email
-
+            is_commit: commit operation
         Returns:
             optional: user model
         """
-        async with self.app.postgres.session.begin().session as session:
-            smtp = select(UserModel).where(UserModel.email == email)
-            if user := (await session.execute(smtp)).unique().fetchone():
-                return user[0]
+        smtp = select(UserModel).where(UserModel.email == email)
+        if is_commit:
+            if data := await self.commit(smtp):
+                return data[0]
+            return None
+        return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
-    async def get_user_by_id_and_refresh_token(
-        self, user_id: str, refresh_token: str
-    ) -> Optional[UserModel]:
-        """Get a user by id."""
-        async with self.app.postgres.session.begin().session as session:
-            smtp = select(UserModel).where(
-                and_(
-                    UserModel.id == user_id,
-                    UserModel.refresh_token == refresh_token,
-                )
-            )
-            if user := (await session.execute(smtp)).unique().fetchone():
-                return user[0]
+    async def update_refresh_token(self, user_id: str, refresh_token: str = None, is_commit: bool = True) -> UserModel:
+        smtp = (
+            update(UserModel)
+            .filter(UserModel.id == user_id)
+            .values(refresh_token=refresh_token)
+            .returning(UserModel)
+        )
+        if is_commit:
+            await self.commit(smtp)
+        return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
-    async def add_refresh_token_to_user(self, user_id: str, refresh_token: str = None):
-        async with self.app.postgres.session.begin().session as session:
-            query = (
-                update(UserModel)
-                .filter(UserModel.id == user_id)
-                .values(refresh_token=refresh_token)
-                .returning(UserModel)
-            )
-            await session.execute(query)
-            await session.commit()
+    async def update_password(self, user_id: str, password: str, is_commit: bool = True) -> Optional[UserModel]:
+        smtp = update(UserModel).where(UserModel.id == user_id).values(password=password).returning(UserModel)
+        if is_commit:
+            if result := await self.commit(smtp):
+                return result[0]
+            return None
+        return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
-    async def commit(self, smtp: Union[Insert, Delete, Update]):
+    async def commit(self, smtp: Union[Insert, Delete, Update, Select]) -> list[dataclass]:
         """Commit and return the model instance.
 
         Args:
             smtp: SMTP connection
+            one: boolean, if True return one object
         """
-        async with self.app.postgres.session as session:
-            user = (await session.execute(smtp)).fetchone()[0]
+        data = []
+        async with self.app.postgres.session.begin().session as session:
+            result = await session.execute(smtp)
             await session.commit()
-            return user
+            for row in result:
+                for item in row:
+                    data.append(item)
+        return data
+
+    async def get_users(self, is_commit: bool = True) -> list[UserModel]:
+        smtp = select(UserModel).limit(1)
+        if is_commit:
+            return await self.commit(smtp)
+        return (await self.app.postgres.session.execute(smtp)).unique.all()

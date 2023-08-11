@@ -80,9 +80,9 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
 
     async def dispatch(
-        self,
-        request: Request,
-        call_next: RequestResponseEndpoint,
+            self,
+            request: Request,
+            call_next: RequestResponseEndpoint,
     ) -> Response | None:
         """Checking access rights to a resource.
 
@@ -138,15 +138,12 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
             case "anonymous", path:
                 if self.public_access.count([path, method.upper()]):
                     return True
-            case "recovery", "/auth/reset_password":
-                return True
-            case "verif", "/auth/reset_password":
-                return True
             case "verification", "/auth/registration_user":
+                return True
+            case "reset", "/auth/update_password":
                 return True
             case "access", path:
                 if path not in [
-                    "/auth/reset_password",
                     "/auth/create_user",
                     "/auth/registration_user",
                 ]:

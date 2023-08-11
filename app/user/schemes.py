@@ -25,11 +25,9 @@ class BaseUserSchema(BaseSchema):
     email: EmailStr = EMAIL
 
 
-class UserSchemaRegistration(BaseSchema):
-    """Schema of the user during registration."""
+class UserPasswordSchema(BaseSchema):
+    """Base User Password Schema."""
 
-    name: str = Field(title="Имя", example="Василий")
-    email: EmailStr = EMAIL
     password: str = Field(title="Пароль", example="password")
     password_confirmation: str = Field(
         title="Пароль, подтверждение ",
@@ -51,9 +49,9 @@ class UserSchemaRegistration(BaseSchema):
 
     @field_validator("password_confirmation")
     def passwords_match(
-        cls,  # noqa
-        password_confirmation: str,
-        values: FieldValidationInfo,
+            cls,  # noqa
+            password_confirmation: str,
+            values: FieldValidationInfo,
     ) -> str:
         """Password comparison.
 
@@ -67,6 +65,13 @@ class UserSchemaRegistration(BaseSchema):
         if password_confirmation != values.data.get("password"):
             raise ValueError("passwords do not match")
         return password_confirmation
+
+
+class UserSchemaRegistration(UserPasswordSchema):
+    """Schema of the user during registration."""
+
+    name: str = Field(title="Имя", example="Василий")
+    email: EmailStr = EMAIL
 
 
 class UserSchemaOut(BaseUserSchema):
@@ -109,23 +114,10 @@ class UserSchemaLogin(BaseModel):
         return sha256(password.get_secret_value().encode("utf-8")).hexdigest()
 
 
-class OkSchema(BaseModel):
-    """Ok."""
-
-    detail: str = "OK 200"
-    message: str = "Successfully"
-
-
 class RefreshSchema(BaseSchema):
     """Scheme for returning token after method /refresh."""
 
     access_token: str
-
-
-class UserSchemaResetPasswordIn(BaseSchema):
-    """Scheme for reset password ."""
-
-    email: EmailStr = EMAIL
 
 
 class TokenSchema(BaseModel):
@@ -138,3 +130,10 @@ class TokenSchema(BaseModel):
     email: str | None
     user_id: str | None
     type: str
+
+
+class OkSchema(BaseModel):
+    """Ok."""
+
+    detail: str = "OK 200"
+    message: str = "Successfully"
