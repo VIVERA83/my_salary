@@ -2,7 +2,7 @@ from base.base_accessor import BaseAccessor
 from base.utils import TryRun
 
 
-@TryRun(total_timeout=1)
+@TryRun(total_timeout=10, group="redis")
 class CacheAccessor(BaseAccessor):
     """Authorization service."""
 

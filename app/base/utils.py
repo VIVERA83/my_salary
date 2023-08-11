@@ -1,5 +1,4 @@
 """Полезные утилиты используемые в приложении."""
-import inspect
 import logging
 from asyncio import (Event, Semaphore, create_task, get_event_loop, sleep,
                      wait_for)
@@ -10,11 +9,9 @@ from inspect import iscoroutinefunction
 from random import randint
 from typing import Any, Callable, Type
 
-__all__ = ["TryRun", "try_run", "before_execution"]
-
 from uuid import uuid4
 
-from icecream import ic
+__all__ = ["TryRun", "try_run", "before_execution"]
 
 
 async def timeout(event: Event, time_out: int) -> True:
@@ -34,18 +31,41 @@ def delta_time() -> float:
 
 
 class TryRun:
-    groups = defaultdict(list)
-    semaphores: dict[str, Semaphore] = {}
+    """Класс декоратор.
+
+    Который оборачивает все методы декларируемого класса в декоратор.
+    Cуть, которого пытаться выполнить метод в течении некоторого времени.
+    В соучастии неуспеха по умолчанию инициализирует ошибке которая была вызвана внутри декоратора.
+    Декоратор снабжен семафором, на случай если ограничения попыток
+    одновременного выполнения одних и тех же методов с одного инстанса."""
+
+    __groups = defaultdict(set)
+    __semaphores: dict[str, Semaphore] = {}
 
     def __init__(
-        self,
-        total_timeout=10,
-        request_timeout: int = 2,
-        logger: logging.Logger = logging.getLogger(),
-        raise_exception: bool = True,
-        fix_error: Callable = None,
-        group: str = None,
+            self,
+            total_timeout=10,
+            request_timeout: int = 2,
+            logger: logging.Logger = logging.getLogger(),
+            raise_exception: bool = True,
+            fix_error: Callable = None,
+            group: str = None,
     ):
+        """Инициализация, задание параметров работы декоратора.
+
+        Args:
+            total_timeout: Общее время работы декоратора в течении которого
+            будут попытки выполнить декорируемую функцию.
+            request_timeout: Время между попытками.
+            logger: объект логирования
+            raise_exception: False - При не возможности выполнить функцию в конце будет возвращен None
+            True - возвращаться исключение
+            fix_error: Функция будет запускать при неудачной попытки исполнения декорируемой функции.
+            group: группа к которой будет зачислин декарированный клас, это позволяет ограничить
+            количество попыток одновременно выполнить тот или иной метод во время падения.
+        Returns:
+              object: результат исполнения.
+        """
         self.total_timeout = total_timeout
         self.request_timeout = request_timeout
         self.logger = logger
@@ -54,10 +74,11 @@ class TryRun:
         self.group_name = group
 
     def __call__(self, cls, *args, **kwargs):
+        """Преобразование декорируемого класса"""
         if self.group_name is None:
             self.group_name = cls.__name__ + "_" + uuid4().hex[:6]
-        self.groups[self.group_name].append(cls)
-        self.semaphores[self.group_name] = Semaphore(5)
+        self.__groups[self.group_name].add(cls)
+        self.__semaphores[self.group_name] = Semaphore(5)
         for name, method in cls.__dict__.items():
             if isinstance(method, Callable):
                 setattr(
@@ -72,19 +93,16 @@ class TryRun:
                         group=self.group_name,
                     )(method),
                 )
-
-        ic(self.groups)
-        ic(self.semaphores)
         return cls
 
     def before_execution(
-        self,
-        total_timeout=10,
-        request_timeout: int = 2,
-        logger: logging.Logger = logging.getLogger(),
-        raise_exception: bool = False,
-        fix_error: Callable = None,
-        group=None,
+            self,
+            total_timeout=10,
+            request_timeout: int = 2,
+            logger: logging.Logger = logging.getLogger(),
+            raise_exception: bool = False,
+            fix_error: Callable = None,
+            group=None,
     ) -> Any:
         """Декоратор, который пытается выполнить входящий вызываемый объект.
 
@@ -105,14 +123,12 @@ class TryRun:
         def func_wrapper(func: Callable):
             @wraps(func)
             async def inner(*args, **kwargs):
-                ic(group)
                 # по сути засекаем время которое будет работать цикл
                 event = Event()  # event блокирует выход из цикла
                 create_task(timeout(event, total_timeout))
                 error = None
                 delta = 0
-
-                async with self.semaphores[group]:
+                async with self.__semaphores[group]:
                     while not event.is_set():
                         try:
                             if error and fix_error:
@@ -146,12 +162,12 @@ class TryRun:
 
 
 def try_run(
-    cls=None,
-    total_timeout=10,
-    request_timeout: int = 2,
-    logger: logging.Logger = logging.getLogger(),
-    raise_exception: bool = False,
-    fix_error: Callable = None,
+        cls=None,
+        total_timeout=10,
+        request_timeout: int = 2,
+        logger: logging.Logger = logging.getLogger(),
+        raise_exception: bool = False,
+        fix_error: Callable = None,
 ):
     lst = []
 
@@ -166,7 +182,6 @@ def try_run(
                         total_timeout, request_timeout, logger, raise_exception, fix_error
                     )(method),
                 )
-        ic(lst)
         return typ
 
     if cls is None:
@@ -175,11 +190,11 @@ def try_run(
 
 
 def before_execution(
-    total_timeout=10,
-    request_timeout: int = 2,
-    logger: logging.Logger = logging.getLogger(),
-    raise_exception: bool = False,
-    fix_error: Callable = None,
+        total_timeout=10,
+        request_timeout: int = 2,
+        logger: logging.Logger = logging.getLogger(),
+        raise_exception: bool = False,
+        fix_error: Callable = None,
 ) -> Any:
     """Декоратор, который пытается выполнить входящий вызываемый объект.
 
@@ -238,8 +253,8 @@ def before_execution(
 
 
 def backoff(
-    request_timeout: int = 3,
-    logger: logging.Logger = logging.getLogger(),
+        request_timeout: int = 3,
+        logger: logging.Logger = logging.getLogger(),
 ) -> Any:
     """Декоратор, который пытается выполнить входящий вызываемый объект.
 
