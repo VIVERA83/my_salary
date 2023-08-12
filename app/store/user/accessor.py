@@ -44,7 +44,6 @@ class UserAccessor(BaseAccessor):
             .returning(UserModel)
         )
 
-
         if is_commit:
             if result := await self.commit(smtp):
                 return result[0]

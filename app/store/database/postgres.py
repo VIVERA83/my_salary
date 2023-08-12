@@ -5,11 +5,21 @@ from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
-from sqlalchemy import DATETIME, TIMESTAMP, MetaData, func, UpdateBase, Result, insert, ValuesBase
+from sqlalchemy import (
+    DATETIME,
+    TIMESTAMP,
+    MetaData,
+    func,
+    UpdateBase,
+    Result,
+    insert,
+    ValuesBase,
+    update, delete,
+)
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDataclass
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 Query = TypeVar("Query", bound=ValuesBase)
 Model = TypeVar("Model", bound=DeclarativeAttributeIntercept)
@@ -87,13 +97,42 @@ class Postgres(BaseAccessor):
 
     @staticmethod
     def get_query_insert(model: Model, **insert_data) -> Query:
+        """Get query inserted.
+
+        Args:
+            model: Table model
+            insert_data: fields for insert dict[name, value]
+
+        Returns:
+        object: query
+        """
         return insert(model).values(**insert_data)
 
     @staticmethod
-    def get_query_update(model: Model, **update_data) -> Query:
-        return insert(model).values(**update_data)
+    def get_query_update_by_id(model: Model, **update_data) -> Query:
+        """Get query update by id.
 
-    async def query_execute(self, query: Query | UpdateBase, ) -> Result[Any]:
+        Args:
+            model: Table model
+            update_data: fields for update dict[name, value]
+        Returns:
+            object: query
+        """
+        return update(model).values(**update_data).where(model.id == update_data["id"])
+
+    @staticmethod
+    def get_query_delete_by_id(model: Model, id: str) -> Query:
+        return delete(model).where(model.id == id)
+
+    async def query_execute(self, query: Query | UpdateBase) -> Result[Any]:
+        """Query execute.
+
+        Args:
+            query: CRUD query for Database
+
+        Returns:
+              Any: result of query
+        """
         async with self.app.postgres.session.begin().session as session:
             result = await session.execute(query)
             await session.commit()

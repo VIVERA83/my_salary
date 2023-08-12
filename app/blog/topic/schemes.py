@@ -38,7 +38,7 @@ class BaseTopicSchema(BaseModel):
         raise ValueError("String should have at least 5 characters")
 
 
-class TopicSchemaIn(BaseTopicSchema):
+class TopicSchemaIn(BaseSchema):
     title: str = TITLE
     description: str = DESCRIPTION
 
@@ -49,12 +49,13 @@ class TopicSchemaOut(BaseTopicSchema):
 
 class TopicSchemaUpdateIn(BaseModel):
     id: UUID = ID
-    title: str | None
-    # = Field(example="Docker",
-    #                 default=None,
-    #                 description="Topic description",
-    #                 )
-    description: str | None  # = Field(example="Docker documentations and examples or practice",
-    #                      default=None,
-    #                      description="description",
-    #                      )
+    title: str | None = Field(
+        example="Docker",
+        default=None,
+        description="Topic description",
+    )
+    description: str = Field(
+        example="Docker documentations and examples or practice",
+        default=None,
+        description="description",
+    )
