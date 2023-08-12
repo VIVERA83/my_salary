@@ -82,8 +82,7 @@ query_page_size: int = Query(
 )
 query_sort_topic_id: Sorting_direction = Query(
     default=None,
-    description="Unique identification of topic",
-    alias="id",
+    description="Sort unique identification of topic",
 )
 query_sort_title: Sorting_direction = Query(
     default=None,

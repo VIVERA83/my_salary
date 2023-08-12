@@ -86,7 +86,7 @@ async def get_topic(
     request: Request,
     page: int = query_page_number,
     size: int = query_page_size,
-    topic_id: Sorting_direction = query_sort_topic_id,
+    id: Sorting_direction = query_sort_topic_id,
     title: Sorting_direction = query_sort_title,
     description: Sorting_direction = query_sort_description,
     created: Sorting_direction = query_sort_created,

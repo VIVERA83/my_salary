@@ -1,11 +1,13 @@
 from typing import Dict, Literal, Optional
 
+from icecream import ic
+
 from base.base_accessor import BaseAccessor
 from sqlalchemy import select, text
 from store.blog.models import TopicModel, UserModel
 
 Field_names = Literal["id", "title", "description", "created", "modified"]
-Sorted_direction = Literal["ASK", "DESC"]
+Sorted_direction = Literal["ASC", "DESC"]
 Sorted_order = Dict[Field_names, Sorted_direction]
 
 
@@ -26,7 +28,7 @@ class BlogAccessor(BaseAccessor):
         return result.scalar_one_or_none()
 
     async def update_topic(
-        self, id: str, title: str = None, description: str = None
+            self, id: str, title: str = None, description: str = None
     ) -> Optional[TopicModel]:
         update_data = {
             name: value for index, (name, value) in enumerate(locals().items()) if index and value
@@ -46,7 +48,7 @@ class BlogAccessor(BaseAccessor):
         return result.scalar_one_or_none()
 
     async def get_topics(
-        self, page: int = 0, size: int = 10, sort_params: Sorted_order = None
+            self, page: int = 0, size: int = 10, sort_params: Sorted_order = None
     ) -> list[TopicModel]:
         query = select(TopicModel).limit(size).offset(page * size)
         query_sort = ", ".join([f"{name} {value}" for name, value in sort_params.items()])
