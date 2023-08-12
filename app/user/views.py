@@ -2,20 +2,19 @@
 
 from typing import Any
 
-from icecream import ic
-
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
+from icecream import ic
 from pydantic import EmailStr
 from user.schemes import (
     OkSchema,
     RefreshSchema,
     TokenSchema,
+    UserPasswordSchema,
     UserSchemaLogin,
     UserSchemaOut,
     UserSchemaRegistration,
-    UserPasswordSchema,
 )
 from user.utils import (
     description_create_user,

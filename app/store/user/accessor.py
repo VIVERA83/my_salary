@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from typing import Optional, Union
 
-from icecream import ic
-
 from base.base_accessor import BaseAccessor
 from base.utils import TryRun
-from sqlalchemy import Delete, Insert, Update, insert, select, update, Select
+from icecream import ic
+from sqlalchemy import Delete, Insert, Select, Update, insert, select, update
 from store.user.models import UserModel
 
 

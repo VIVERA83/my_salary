@@ -1,9 +1,12 @@
-from typing import Optional
-
-from icecream import ic
+from typing import Dict, Literal, Optional
 
 from base.base_accessor import BaseAccessor
+from sqlalchemy import select, text
 from store.blog.models import TopicModel, UserModel
+
+Field_names = Literal["id", "title", "description", "created", "modified"]
+Sorted_direction = Literal["ASK", "DESC"]
+Sorted_order = Dict[Field_names, Sorted_direction]
 
 
 class BlogAccessor(BaseAccessor):
@@ -22,7 +25,9 @@ class BlogAccessor(BaseAccessor):
         result = await self.app.postgres.query_execute(query.returning(TopicModel))
         return result.scalar_one_or_none()
 
-    async def update_topic(self, id: str, title: str = None, description: str = None):
+    async def update_topic(
+        self, id: str, title: str = None, description: str = None
+    ) -> Optional[TopicModel]:
         update_data = {
             name: value for index, (name, value) in enumerate(locals().items()) if index and value
         }
@@ -30,7 +35,21 @@ class BlogAccessor(BaseAccessor):
         result = await self.app.postgres.query_execute(query.returning(TopicModel))
         return result.scalar_one_or_none()
 
-    async def delete_topic(self, id: str):
+    async def delete_topic(self, id: str) -> Optional[TopicModel]:
         query = self.app.postgres.get_query_delete_by_id(TopicModel, id)
         result = await self.app.postgres.query_execute(query.returning(TopicModel))
         return result.scalar_one_or_none()
+
+    async def get_topic_by_id(self, id: str) -> Optional[TopicModel]:
+        query = self.app.postgres.get_query_select_by_id(TopicModel, id)
+        result = await self.app.postgres.query_execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_topics(
+        self, page: int = 0, size: int = 10, sort_params: Sorted_order = None
+    ) -> list[TopicModel]:
+        query = select(TopicModel).limit(size).offset(page * size)
+        query_sort = ", ".join([f"{name} {value}" for name, value in sort_params.items()])
+        query = query.order_by(text(query_sort))
+        result = await self.app.postgres.query_execute(query)
+        return result.scalars().all()  # noqa

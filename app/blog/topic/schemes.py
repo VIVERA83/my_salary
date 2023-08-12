@@ -1,6 +1,9 @@
 """Schemas сервиса Блога, подраздел Topic(TOPIC)."""
+from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
+from fastapi import Query
 from pydantic import BaseModel, Field, field_validator
 
 ID: UUID = Field(
@@ -38,18 +41,19 @@ class BaseTopicSchema(BaseModel):
         raise ValueError("String should have at least 5 characters")
 
 
-class TopicSchemaIn(BaseSchema):
+class TopicSchemaIn(BaseTopicSchema):
     title: str = TITLE
     description: str = DESCRIPTION
 
 
 class TopicSchemaOut(BaseTopicSchema):
     id: UUID = ID
+    created: datetime
+    modified: datetime
 
 
-class TopicSchemaUpdateIn(BaseModel):
-    id: UUID = ID
-    title: str | None = Field(
+class TopicSchemaUpdateIn(BaseTopicSchema):
+    title: str = Field(
         example="Docker",
         default=None,
         description="Topic description",
@@ -59,3 +63,15 @@ class TopicSchemaUpdateIn(BaseModel):
         default=None,
         description="description",
     )
+
+
+Sorting_direction = Literal["ASC", "DESC"]
+query_page_number: int = Query(default=1, description="Number of page", alias="page[number]", gt=0)
+query_page_size: int = Query(
+    default=10, description="Size of the page", alias="page[size]", gt=0, le=100
+)
+query_sort_topic_id: Sorting_direction = Query(default=None, alias="id")
+query_sort_title: Sorting_direction = Query(default=None)
+query_sort_description: Sorting_direction = Query(default=None)
+query_sort_created: Sorting_direction = Query(default=None)
+query_sort_modified: Sorting_direction = Query(default=None)

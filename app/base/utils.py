@@ -7,7 +7,6 @@ from functools import wraps
 from inspect import iscoroutinefunction
 from random import randint
 from typing import Any, Callable, Type
-
 from uuid import uuid4
 
 __all__ = ["TryRun", "try_run", "before_execution"]

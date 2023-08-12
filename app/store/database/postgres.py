@@ -1,6 +1,6 @@
 """Database..."""
 from dataclasses import asdict, dataclass, is_dataclass
-from typing import Optional, Type, Any, TypeVar
+from typing import Any, Optional, Type, TypeVar
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
@@ -8,18 +8,22 @@ from core.settings import PostgresSettings
 from sqlalchemy import (
     DATETIME,
     TIMESTAMP,
+    Delete,
     MetaData,
-    func,
-    UpdateBase,
     Result,
-    insert,
+    Select,
+    UpdateBase,
     ValuesBase,
-    update, delete,
+    delete,
+    func,
+    insert,
+    select,
+    update,
 )
-from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 
 Query = TypeVar("Query", bound=ValuesBase)
 Model = TypeVar("Model", bound=DeclarativeAttributeIntercept)
@@ -121,10 +125,14 @@ class Postgres(BaseAccessor):
         return update(model).values(**update_data).where(model.id == update_data["id"])
 
     @staticmethod
-    def get_query_delete_by_id(model: Model, id: str) -> Query:
+    def get_query_delete_by_id(model: Model, id: str) -> Delete:
         return delete(model).where(model.id == id)
 
-    async def query_execute(self, query: Query | UpdateBase) -> Result[Any]:
+    @staticmethod
+    def get_query_select_by_id(model: Model, id: str) -> Select:
+        return select(model).where(model.id == id)
+
+    async def query_execute(self, query: Query | UpdateBase | Select) -> Result[Any]:
         """Query execute.
 
         Args:
