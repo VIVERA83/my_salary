@@ -6,6 +6,8 @@ from uuid import UUID
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator
 
+Sorting_direction = Literal["ASC", "DESC"]
+
 ID: UUID = Field(
     example="1595c2fc-397a-40c9-8105-a4d2f0a33a7a",
     description="unique indicator of topic",
@@ -65,13 +67,37 @@ class TopicSchemaUpdateIn(BaseTopicSchema):
     )
 
 
-Sorting_direction = Literal["ASC", "DESC"]
-query_page_number: int = Query(default=1, description="Number of page", alias="page[number]", gt=0)
-query_page_size: int = Query(
-    default=10, description="Size of the page", alias="page[size]", gt=0, le=100
+query_page_number: int = Query(
+    default=1,
+    description="Number of page",
+    alias="page[number]",
+    gt=0,
 )
-query_sort_topic_id: Sorting_direction = Query(default=None, alias="id")
-query_sort_title: Sorting_direction = Query(default=None)
-query_sort_description: Sorting_direction = Query(default=None)
-query_sort_created: Sorting_direction = Query(default=None)
-query_sort_modified: Sorting_direction = Query(default=None)
+query_page_size: int = Query(
+    default=10,
+    description="Size of the page",
+    alias="page[size]",
+    gt=0,
+    le=100,
+)
+query_sort_topic_id: Sorting_direction = Query(
+    default=None,
+    description="Unique identification of topic",
+    alias="id",
+)
+query_sort_title: Sorting_direction = Query(
+    default=None,
+    description="Sort title",
+)
+query_sort_description: Sorting_direction = Query(
+    default=None,
+    description="Sort description",
+)
+query_sort_created: Sorting_direction = Query(
+    default=None,
+    description="Sort created date",
+)
+query_sort_modified: Sorting_direction = Query(
+    default=None,
+    description="Sort modified date",
+)

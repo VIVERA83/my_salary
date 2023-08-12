@@ -93,8 +93,9 @@ async def get_topic(
     modified: Sorting_direction = query_sort_modified,
 ) -> Any:
     sorted_params = {
-        name: value for index, (name, value) in enumerate(locals().items()) if int(index) > 2 and value
+        name: value
+        for index, (name, value) in enumerate(locals().items())
+        if int(index) > 2 and value
     }
-    print(sorted_params)
     topic_data = await request.app.store.blog.get_topics(page - 1, size, sorted_params)
     return [TopicSchemaOut(**topic.as_dict()) for topic in topic_data]
