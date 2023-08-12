@@ -1,9 +1,10 @@
 """Database..."""
 from dataclasses import asdict, dataclass, is_dataclass
-from typing import Any, Optional, Type, TypeVar, Literal, Dict, Union
+from typing import Any, Optional, Tuple, Type, TypeVar, Union
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
+from base.type_hint import Sorted_order
 from core.settings import PostgresSettings
 from sqlalchemy import (
     DATETIME,
@@ -18,8 +19,8 @@ from sqlalchemy import (
     func,
     insert,
     select,
-    update,
     text,
+    update,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -28,9 +29,7 @@ from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 
 Query = Union[ValuesBase, Select, UpdateBase, Delete]
 Model = TypeVar("Model", bound=DeclarativeAttributeIntercept)
-Field_names = Literal["id", "title", "description", "created", "modified"]
-Sorted_direction = Literal["ASC", "DESC"]
-Sorted_order = Dict[Field_names, Sorted_direction]
+Field_table = Tuple[str, int]
 
 
 @dataclass
@@ -117,24 +116,48 @@ class Postgres(BaseAccessor):
         return insert(model).values(**insert_data)
 
     @staticmethod
-    def get_query_update_by_id(model: Model, **update_data) -> Query:
-        """Get query update by id.
+    def get_query_update_by_field(
+        model: Model, field_name: str, field_value: Any, **update_data
+    ) -> Query:
+        """Get query update records by field.
 
         Args:
             model: Table model
+            field_name: Field name in the model
+            field_value: Field value in the model
             update_data: fields for update dict[name, value]
         Returns:
-            object: query
+            object: Query object
         """
-        return update(model).values(**update_data).where(model.id == update_data["id"])
+        return update(model).values(**update_data).where(text(f"{field_name} = '{field_value}'"))
 
     @staticmethod
-    def get_query_delete_by_id(model: Model, id: str) -> Delete:
-        return delete(model).where(model.id == id)
+    def get_query_delete_by_field(model: Model, field_name: str, field_value: Any) -> Delete:
+        """Get query delete records in Table.
+
+        Args:
+            model: Table model
+            field_name: Field name in the model
+            field_value: Field value in the model
+
+        Returns:
+            object: Query object
+        """
+        return delete(model).where(text(f"{field_name} = '{field_value}'"))
 
     @staticmethod
-    def get_query_select_by_id(model: Model, id: str) -> Select:
-        return select(model).where(model.id == id)
+    def get_query_select_by_field(model: Model, field_name: str, field_value: Any) -> Query:
+        """Get a query by field name.
+
+        Args:
+            model: Table model
+            field_name: Field name in the model
+            field_value: Field value in the model
+
+        Returns:
+            object: Query object
+        """
+        return select(model).where(text(f"{field_name} = '{field_value}'"))
 
     async def query_execute(self, query: Query) -> Result[Any]:
         """Query execute.
@@ -151,7 +174,9 @@ class Postgres(BaseAccessor):
             return result
 
     @staticmethod
-    def get_query_filter(model: Model, page: int = 0, size: int = 10, sort_params: Sorted_order = None) -> Query:
+    def get_query_filter(
+        model: Model, page: int = 0, size: int = 10, sort_params: Sorted_order = None
+    ) -> Query:
         """Get query filter by sorted parameters.
 
         Args:

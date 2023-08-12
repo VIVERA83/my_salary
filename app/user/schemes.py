@@ -1,9 +1,47 @@
 """Schemas сервиса Авторизации (AUTH)."""
+from datetime import datetime
 from hashlib import sha256
 from uuid import UUID
 
+from base.type_hint import Sorted_direction
+from fastapi import Query
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
+
+query_page_number: int = Query(
+    default=1,
+    description="Number of page",
+    alias="page[number]",
+    gt=0,
+)
+query_page_size: int = Query(
+    default=10,
+    description="Size of the page",
+    alias="page[size]",
+    gt=0,
+    le=100,
+)
+query_sort_user_id: Sorted_direction = Query(
+    default=None,
+    description="Sort unique identification of user",
+)
+query_sort_email: Sorted_direction = Query(
+    default=None,
+    description="Sort email address",
+)
+query_sort_name: Sorted_direction = Query(
+    default=None,
+    description="Sort user name",
+)
+
+query_sort_created: Sorted_direction = Query(
+    default=None,
+    description="Sort created date",
+)
+query_sort_modified: Sorted_direction = Query(
+    default=None,
+    description="Sort modified date",
+)
 
 EMAIL = Field(title="email адрес пользователя, уникальный элемент")
 
@@ -23,6 +61,8 @@ class BaseUserSchema(BaseSchema):
 
     name: str = Field(title="Имя пользователя", example="Василий Алибабаевич")
     email: EmailStr = EMAIL
+    created: datetime
+    modified: datetime
 
 
 class UserPasswordSchema(BaseSchema):
@@ -83,12 +123,6 @@ class UserSchemaOut(BaseUserSchema):
         example="a17b2315-5bb8-40d3-8d8a-2d48b6c3144e",
     )
     access_token: str = Field(title="Токен доступа")
-
-    class Config:
-        """Config."""
-
-        from_attributes = True
-        exclude = True
 
 
 class UserSchemaLogin(BaseModel):

@@ -2,12 +2,13 @@
 
 from typing import Any
 
+from base.type_hint import Sorted_direction
 from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
-from icecream import ic
 from pydantic import EmailStr
 from user.schemes import (
+    BaseUserSchema,
     OkSchema,
     RefreshSchema,
     TokenSchema,
@@ -15,6 +16,13 @@ from user.schemes import (
     UserSchemaLogin,
     UserSchemaOut,
     UserSchemaRegistration,
+    query_page_number,
+    query_page_size,
+    query_sort_created,
+    query_sort_email,
+    query_sort_modified,
+    query_sort_name,
+    query_sort_user_id,
 )
 from user.utils import (
     description_create_user,
@@ -180,20 +188,32 @@ async def reset_password(request: Request, email: EmailStr) -> Any:
     response_model=OkSchema,
 )
 async def update_password(request: Request, password: UserPasswordSchema) -> Any:
-    """Update user password.
-
-    Args:
-        request: Request
-        password: user password
-
-    Returns:
-        optional: OkSchema
-    """
     await request.app.store.auth.update_password(request.state.user_id, password.password)
     return OkSchema(message="Password changed successfully")
 
 
-@auth_route.get("/users")
-async def get_users(request: Request) -> Any:
-    ic(await request.app.store.auth.get_users())
-    return OkSchema()
+@auth_route.get(
+    "/users",
+    summary="Получить список пользователей",
+    description="Получить список зарегистрированных "
+    "пользователей согласно заданным параметрам фильтрации",
+    response_description="Список пользователей",
+    response_model=list[BaseUserSchema],
+)
+async def get_users(
+    request: Request,
+    page: int = query_page_number,
+    size: int = query_page_size,
+    id: Sorted_direction = query_sort_user_id,
+    email: Sorted_direction = query_sort_email,
+    name: Sorted_direction = query_sort_name,
+    created: Sorted_direction = query_sort_created,
+    modified: Sorted_direction = query_sort_modified,
+) -> Any:
+    sorted_params = {
+        name: value
+        for index, (name, value) in enumerate(locals().items())
+        if int(index) > 2 and value
+    }
+    users_data = await request.app.store.auth.get_users(page - 1, size, sorted_params)
+    return [BaseUserSchema(execute=["access_token"], **user.as_dict()) for user in users_data]

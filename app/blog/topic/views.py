@@ -2,8 +2,8 @@
 from typing import Any
 from uuid import UUID
 
+from base.type_hint import Sorted_direction
 from blog.topic.schemes import (
-    Sorting_direction,
     TopicSchemaIn,
     TopicSchemaOut,
     TopicSchemaUpdateIn,
@@ -79,18 +79,18 @@ async def get_topic(request: Request, id_topic: UUID) -> Any:
     "/get",
     summary="Получить темы ",
     description="Получить темы согласно условию пагинации .",
-    response_description="Полная информация о теме.",
+    response_description="Список тем",
     response_model=list[TopicSchemaOut],
 )
 async def get_topic(
     request: Request,
     page: int = query_page_number,
     size: int = query_page_size,
-    id: Sorting_direction = query_sort_topic_id,
-    title: Sorting_direction = query_sort_title,
-    description: Sorting_direction = query_sort_description,
-    created: Sorting_direction = query_sort_created,
-    modified: Sorting_direction = query_sort_modified,
+    id: Sorted_direction = query_sort_topic_id,
+    title: Sorted_direction = query_sort_title,
+    description: Sorted_direction = query_sort_description,
+    created: Sorted_direction = query_sort_created,
+    modified: Sorted_direction = query_sort_modified,
 ) -> Any:
     sorted_params = {
         name: value

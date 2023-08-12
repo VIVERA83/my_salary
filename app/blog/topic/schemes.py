@@ -1,12 +1,10 @@
 """Schemas сервиса Блога, подраздел Topic(TOPIC)."""
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
+from base.type_hint import Sorted_direction
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator
-
-Sorting_direction = Literal["ASC", "DESC"]
 
 ID: UUID = Field(
     example="1595c2fc-397a-40c9-8105-a4d2f0a33a7a",
@@ -80,23 +78,23 @@ query_page_size: int = Query(
     gt=0,
     le=100,
 )
-query_sort_topic_id: Sorting_direction = Query(
+query_sort_topic_id: Sorted_direction = Query(
     default=None,
     description="Sort unique identification of topic",
 )
-query_sort_title: Sorting_direction = Query(
+query_sort_title: Sorted_direction = Query(
     default=None,
     description="Sort title",
 )
-query_sort_description: Sorting_direction = Query(
+query_sort_description: Sorted_direction = Query(
     default=None,
     description="Sort description",
 )
-query_sort_created: Sorting_direction = Query(
+query_sort_created: Sorted_direction = Query(
     default=None,
     description="Sort created date",
 )
-query_sort_modified: Sorting_direction = Query(
+query_sort_modified: Sorted_direction = Query(
     default=None,
     description="Sort modified date",
 )

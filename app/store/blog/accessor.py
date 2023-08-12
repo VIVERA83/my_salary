@@ -1,23 +1,38 @@
-from typing import Dict, Literal, Optional
+from typing import Optional
 
 from base.base_accessor import BaseAccessor
-from sqlalchemy import select, text
+from base.type_hint import Sorted_order
 from store.blog.models import TopicModel, UserModel
-
-Field_names = Literal["id", "title", "description", "created", "modified"]
-Sorted_direction = Literal["ASC", "DESC"]
-Sorted_order = Dict[Field_names, Sorted_direction]
 
 
 class BlogAccessor(BaseAccessor):
     """Blog service."""
 
     async def create_user(self, user_id: str, name: str, email: str):
+        """Create a new user.
+
+        Args:
+            user_id: Unique user identifier, UUID
+            name: Name of the new user
+            email: Email address, EmailStr
+
+        Returns:
+            object: User object, UserModel
+        """
         query = self.app.postgres.get_query_insert(UserModel, id=user_id, name=name, email=email)
         result = await self.app.postgres.query_execute(query.returning(UserModel))
         return result.scalar_one_or_none()
 
     async def create_topic(self, title: str, description: str) -> Optional[TopicModel]:
+        """Create topic.
+
+        Args:
+            title: name of topic
+            description: description topic
+
+        Returns:
+            object: Topic object, TopicModel
+        """
         insert_data = {
             name: value for index, (name, value) in enumerate(locals().items()) if index
         }
@@ -26,26 +41,30 @@ class BlogAccessor(BaseAccessor):
         return result.scalar_one_or_none()
 
     async def update_topic(
-            self, id: str, title: str = None, description: str = None
+        self, id: str, title: str = None, description: str = None
     ) -> Optional[TopicModel]:
         update_data = {
-            name: value for index, (name, value) in enumerate(locals().items()) if index and value
+            name: value
+            for index, (name, value) in enumerate(locals().items())
+            if int(index) > 1 and value
         }
-        query = self.app.postgres.get_query_update_by_id(TopicModel, **update_data)
+        query = self.app.postgres.get_query_update_by_field(TopicModel, "id", id, **update_data)
         result = await self.app.postgres.query_execute(query.returning(TopicModel))
         return result.scalar_one_or_none()
 
     async def delete_topic(self, id: str) -> Optional[TopicModel]:
-        query = self.app.postgres.get_query_delete_by_id(TopicModel, id)
+        query = self.app.postgres.get_query_delete_by_field(TopicModel, "id", id)
         result = await self.app.postgres.query_execute(query.returning(TopicModel))
         return result.scalar_one_or_none()
 
     async def get_topic_by_id(self, id: str) -> Optional[TopicModel]:
-        query = self.app.postgres.get_query_select_by_id(TopicModel, id)
+        query = self.app.postgres.get_query_select_by_field(TopicModel, "id", id)
         result = await self.app.postgres.query_execute(query)
         return result.scalar_one_or_none()
 
-    async def get_topics(self, page: int = 0, size: int = 10, sort_params: Sorted_order = None) -> list[TopicModel]:
+    async def get_topics(
+        self, page: int = 0, size: int = 10, sort_params: Sorted_order = None
+    ) -> list[TopicModel]:
         query = self.app.postgres.get_query_filter(TopicModel, page, size, sort_params)
         result = await self.app.postgres.query_execute(query)
         return result.scalars().all()  # noqa
