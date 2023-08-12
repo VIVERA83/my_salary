@@ -8,12 +8,22 @@ from core.components import Request
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from pydantic import EmailStr
-from user.schemes import (OkSchema, RefreshSchema, TokenSchema,
-                          UserSchemaLogin, UserSchemaOut,
-                          UserSchemaRegistration, UserPasswordSchema)
-from user.utils import (description_create_user, description_login_user,
-                        description_logout_user, description_refresh_tokens,
-                        description_registration_user)
+from user.schemes import (
+    OkSchema,
+    RefreshSchema,
+    TokenSchema,
+    UserSchemaLogin,
+    UserSchemaOut,
+    UserSchemaRegistration,
+    UserPasswordSchema,
+)
+from user.utils import (
+    description_create_user,
+    description_login_user,
+    description_logout_user,
+    description_refresh_tokens,
+    description_registration_user,
+)
 
 auth_route = APIRouter(prefix="/auth", tags=["AUTH"])
 
@@ -26,8 +36,8 @@ auth_route = APIRouter(prefix="/auth", tags=["AUTH"])
     response_model=OkSchema,
 )
 async def create_user(
-        request: "Request",
-        user: UserSchemaRegistration,
+    request: "Request",
+    user: UserSchemaRegistration,
 ) -> Any:
     """A temporary user record is created in the temporary storage.
 
@@ -184,9 +194,7 @@ async def update_password(request: Request, password: UserPasswordSchema) -> Any
     return OkSchema(message="Password changed successfully")
 
 
-@auth_route.get(
-    "/users"
-)
+@auth_route.get("/users")
 async def get_users(request: Request) -> Any:
     ic(await request.app.store.auth.get_users())
     return OkSchema()

@@ -49,9 +49,9 @@ class UserPasswordSchema(BaseSchema):
 
     @field_validator("password_confirmation")
     def passwords_match(
-            cls,  # noqa
-            password_confirmation: str,
-            values: FieldValidationInfo,
+        cls,  # noqa
+        password_confirmation: str,
+        values: FieldValidationInfo,
     ) -> str:
         """Password comparison.
 

@@ -5,10 +5,9 @@ from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
-from sqlalchemy import DATETIME, TIMESTAMP, MetaData, func
+from sqlalchemy import DATETIME, TIMESTAMP, MetaData, func, Insert
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -81,3 +80,9 @@ class Postgres(BaseAccessor):
         if self._engine:
             await self._engine.dispose()
         self.logger.info("Disconnected from Postgres")
+
+    async def insert(self, smtp: Insert):
+        async with self.session.begin().session as session:
+            result_data = await session.execute(smtp)
+            await session.commit()
+            return result_data

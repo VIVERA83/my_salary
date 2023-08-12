@@ -65,7 +65,7 @@ class UserManager(BaseAccessor):
         return user
 
     async def user_registration(
-            self, token: Token, response: Response
+        self, token: Token, response: Response
     ) -> dict[USER_DATA_KEY, Any]:
         """Registration new user.
 
@@ -119,7 +119,7 @@ class UserManager(BaseAccessor):
         return {**user.as_dict(), "access_token": access_token}
 
     def create_access_refresh_cookie(
-            self, user_id: str, email: EmailStr, response: Response, domain: str = None
+        self, user_id: str, email: EmailStr, response: Response, domain: str = None
     ) -> [str, str]:
         """Create access and refresh cookie, and add refresh token to cookie.
 
@@ -170,11 +170,12 @@ class UserManager(BaseAccessor):
         try:
             await self.app.store.cache.set(user.email, token, 180)
             flag = True
-            await self.app.store.ems.send_message_to_reset_password(user.email, user.name, token, "reset_ password")
+            await self.app.store.ems.send_message_to_reset_password(
+                user.email, user.name, token, "reset_ password"
+            )
         except Exception as e:
             if flag:
                 await self.app.store.cache.delete(user.email)
             raise ConnectionError(e.args[0])
         else:
-           return user
-
+            return user

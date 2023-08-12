@@ -1,5 +1,7 @@
 from typing import Optional, Union
 
+from icecream import ic
+
 from base.base_accessor import BaseAccessor
 from base.utils import TryRun
 from sqlalchemy import Delete, Insert, Update, insert
@@ -11,7 +13,7 @@ class BlogAccessor(BaseAccessor):
     """Blog service."""
 
     async def create_user(
-        self, user_id: str, name: str, email: str, is_commit: bool = True
+            self, user_id: str, name: str, email: str, is_commit: bool = True
     ) -> UserModel:
         """Adding a new user to the database.
 
@@ -39,33 +41,67 @@ class BlogAccessor(BaseAccessor):
             return await self.commit(smtp)
         return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
-    async def commit(self, smtp: Union[Insert, Delete, Update]):
-        """Commit and return the model instance.
+    async def commit(self, smtp):
+        data = await self.app.postgres.insert(smtp)
+        ic(data)
+        return data
 
-        Args:
-            smtp: SMTP connection
-        """
-        async with self.app.postgres.session as session:
-            user = (await session.execute(smtp)).fetchone()[0]
-            await session.commit()
-            return user
+    # async def commit(self, smtp: Union[Insert, Delete, Update]):
+    #     """Commit and return the model instance.
+    #
+    #     Args:
+    #         smtp: SMTP connection
+    #     """
+    #     async with self.app.postgres.session as session:
+    #         user = (await session.execute(smtp)).fetchone()[0]
+    #         await session.commit()
+    #         return user
+
+    # async def create_topic(self, title: str, description: str) -> Optional[TopicModel]:
+    #     async with (self.app.postgres.session.begin().session as session):
+    #         smtp = (
+    #             insert(TopicModel)
+    #             .values(
+    #                 title=title,
+    #                 description=description,
+    #             )
+    #             .returning(TopicModel)
+    #         )
+    #
+    #         topic = await session.execute(smtp)
+    #         await session.commit()
+    #         return topic.fetchone()[0]
+
+    def topic(self, title: str, description: str):
+        smtp = (
+            insert(TopicModel)
+            .values(
+                title=title,
+                description=description,
+            )
+            .returning(TopicModel)
+        )
+        return smtp
 
     async def create_topic(self, title: str, description: str) -> Optional[TopicModel]:
-        async with (self.app.postgres.session.begin().session as session):
-            smtp = (
-                insert(TopicModel)
-                .values(
-                    title=title,
-                    description=description,
-                )
-                .returning(TopicModel)
-            )
-
-            topic = await session.execute(smtp)
-            await session.commit()
-            return topic.fetchone()[0]
+        # async with (self.app.postgres.session.begin().session as session):
+        # smtp = (
+        #     insert(TopicModel)
+        #     .values(
+        #         title=title,
+        #         description=description,
+        #     )
+        #     .returning(TopicModel)
+        # )
+        data = await self.commit(await self.topic(title, description))
+        for item in data.first():
+            ic(item)
+        return data
+        # topic = await session.execute(smtp)
+        # await session.commit()
+        # return topic.fetchone()[0]
 
     async def update_topic(
-        self, title: str = None, description: str = None
+            self, title: str = None, description: str = None
     ) -> Optional[TopicModel]:
         ...

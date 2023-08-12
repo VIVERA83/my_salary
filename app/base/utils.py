@@ -1,7 +1,6 @@
 """Полезные утилиты используемые в приложении."""
 import logging
-from asyncio import (Event, Semaphore, create_task, get_event_loop, sleep,
-                     wait_for)
+from asyncio import Event, Semaphore, create_task, get_event_loop, sleep, wait_for
 from collections import defaultdict
 from concurrent import futures
 from functools import wraps
@@ -43,13 +42,13 @@ class TryRun:
     __semaphores: dict[str, Semaphore] = {}
 
     def __init__(
-            self,
-            total_timeout=10,
-            request_timeout: int = 2,
-            logger: logging.Logger = logging.getLogger(),
-            raise_exception: bool = True,
-            fix_error: Callable = None,
-            group: str = None,
+        self,
+        total_timeout=10,
+        request_timeout: int = 2,
+        logger: logging.Logger = logging.getLogger(),
+        raise_exception: bool = True,
+        fix_error: Callable = None,
+        group: str = None,
     ):
         """Инициализация, задание параметров работы декоратора.
 
@@ -96,13 +95,13 @@ class TryRun:
         return cls
 
     def before_execution(
-            self,
-            total_timeout=10,
-            request_timeout: int = 2,
-            logger: logging.Logger = logging.getLogger(),
-            raise_exception: bool = False,
-            fix_error: Callable = None,
-            group=None,
+        self,
+        total_timeout=10,
+        request_timeout: int = 2,
+        logger: logging.Logger = logging.getLogger(),
+        raise_exception: bool = False,
+        fix_error: Callable = None,
+        group=None,
     ) -> Any:
         """Декоратор, который пытается выполнить входящий вызываемый объект.
 
@@ -162,12 +161,12 @@ class TryRun:
 
 
 def try_run(
-        cls=None,
-        total_timeout=10,
-        request_timeout: int = 2,
-        logger: logging.Logger = logging.getLogger(),
-        raise_exception: bool = False,
-        fix_error: Callable = None,
+    cls=None,
+    total_timeout=10,
+    request_timeout: int = 2,
+    logger: logging.Logger = logging.getLogger(),
+    raise_exception: bool = False,
+    fix_error: Callable = None,
 ):
     lst = []
 
@@ -190,11 +189,11 @@ def try_run(
 
 
 def before_execution(
-        total_timeout=10,
-        request_timeout: int = 2,
-        logger: logging.Logger = logging.getLogger(),
-        raise_exception: bool = False,
-        fix_error: Callable = None,
+    total_timeout=10,
+    request_timeout: int = 2,
+    logger: logging.Logger = logging.getLogger(),
+    raise_exception: bool = False,
+    fix_error: Callable = None,
 ) -> Any:
     """Декоратор, который пытается выполнить входящий вызываемый объект.
 
@@ -253,8 +252,8 @@ def before_execution(
 
 
 def backoff(
-        request_timeout: int = 3,
-        logger: logging.Logger = logging.getLogger(),
+    request_timeout: int = 3,
+    logger: logging.Logger = logging.getLogger(),
 ) -> Any:
     """Декоратор, который пытается выполнить входящий вызываемый объект.
 

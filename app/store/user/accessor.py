@@ -14,12 +14,12 @@ class UserAccessor(BaseAccessor):
     """Authorization service."""
 
     async def create_user(
-            self,
-            name: str,
-            email: str,
-            password: str,
-            is_superuser: Optional[bool] = None,
-            is_commit: bool = True,
+        self,
+        name: str,
+        email: str,
+        password: str,
+        is_superuser: Optional[bool] = None,
+        is_commit: bool = True,
     ) -> Optional[UserModel]:
         """Adding a new user to the database.
 
@@ -43,7 +43,8 @@ class UserAccessor(BaseAccessor):
             )
             .returning(UserModel)
         )
-        ic(type(smtp))
+
+
         if is_commit:
             if result := await self.commit(smtp):
                 return result[0]
@@ -67,7 +68,9 @@ class UserAccessor(BaseAccessor):
             return None
         return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
-    async def update_refresh_token(self, user_id: str, refresh_token: str = None, is_commit: bool = True) -> UserModel:
+    async def update_refresh_token(
+        self, user_id: str, refresh_token: str = None, is_commit: bool = True
+    ) -> UserModel:
         smtp = (
             update(UserModel)
             .filter(UserModel.id == user_id)
@@ -78,8 +81,15 @@ class UserAccessor(BaseAccessor):
             await self.commit(smtp)
         return (await self.app.postgres.session.execute(smtp)).fetchone()[0]
 
-    async def update_password(self, user_id: str, password: str, is_commit: bool = True) -> Optional[UserModel]:
-        smtp = update(UserModel).where(UserModel.id == user_id).values(password=password).returning(UserModel)
+    async def update_password(
+        self, user_id: str, password: str, is_commit: bool = True
+    ) -> Optional[UserModel]:
+        smtp = (
+            update(UserModel)
+            .where(UserModel.id == user_id)
+            .values(password=password)
+            .returning(UserModel)
+        )
         if is_commit:
             if result := await self.commit(smtp):
                 return result[0]
