@@ -1,6 +1,6 @@
 """Database..."""
 from dataclasses import asdict, dataclass, is_dataclass
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar, Literal, Dict, Union
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
@@ -19,14 +19,18 @@ from sqlalchemy import (
     insert,
     select,
     update,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 
-Query = TypeVar("Query", bound=ValuesBase)
+Query = Union[ValuesBase, Select, UpdateBase, Delete]
 Model = TypeVar("Model", bound=DeclarativeAttributeIntercept)
+Field_names = Literal["id", "title", "description", "created", "modified"]
+Sorted_direction = Literal["ASC", "DESC"]
+Sorted_order = Dict[Field_names, Sorted_direction]
 
 
 @dataclass
@@ -132,7 +136,7 @@ class Postgres(BaseAccessor):
     def get_query_select_by_id(model: Model, id: str) -> Select:
         return select(model).where(model.id == id)
 
-    async def query_execute(self, query: Query | UpdateBase | Select) -> Result[Any]:
+    async def query_execute(self, query: Query) -> Result[Any]:
         """Query execute.
 
         Args:
@@ -145,3 +149,20 @@ class Postgres(BaseAccessor):
             result = await session.execute(query)
             await session.commit()
             return result
+
+    @staticmethod
+    def get_query_filter(model: Model, page: int = 0, size: int = 10, sort_params: Sorted_order = None) -> Query:
+        """Get query filter by sorted parameters.
+
+        Args:
+            model: Model table
+            page: number of page
+            size: page size
+            sort_params: sort parameters
+
+        Returns:
+            query: Query object
+        """
+        query = select(model).limit(size).offset(page * size)
+        query_sort = ", ".join([f"{name} {value}" for name, value in sort_params.items()])
+        return query.order_by(text(query_sort))

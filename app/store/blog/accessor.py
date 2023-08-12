@@ -1,7 +1,5 @@
 from typing import Dict, Literal, Optional
 
-from icecream import ic
-
 from base.base_accessor import BaseAccessor
 from sqlalchemy import select, text
 from store.blog.models import TopicModel, UserModel
@@ -47,11 +45,7 @@ class BlogAccessor(BaseAccessor):
         result = await self.app.postgres.query_execute(query)
         return result.scalar_one_or_none()
 
-    async def get_topics(
-            self, page: int = 0, size: int = 10, sort_params: Sorted_order = None
-    ) -> list[TopicModel]:
-        query = select(TopicModel).limit(size).offset(page * size)
-        query_sort = ", ".join([f"{name} {value}" for name, value in sort_params.items()])
-        query = query.order_by(text(query_sort))
+    async def get_topics(self, page: int = 0, size: int = 10, sort_params: Sorted_order = None) -> list[TopicModel]:
+        query = self.app.postgres.get_query_filter(TopicModel, page, size, sort_params)
         result = await self.app.postgres.query_execute(query)
         return result.scalars().all()  # noqa
