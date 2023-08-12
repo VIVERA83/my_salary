@@ -79,7 +79,7 @@ class UserManager(BaseAccessor):
                 user.name, user.email, user.password, user.is_superuser
             )
             user_blog = await self.app.store.blog.create_user(
-                new_user.id, new_user.name, new_user.email, False
+                new_user.id, new_user.name, new_user.email
             )
             session.add_all([new_user, user_blog])
             access_token, refresh_token = self.create_access_refresh_cookie(

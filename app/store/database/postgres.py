@@ -1,14 +1,18 @@
 """Database..."""
-from dataclasses import asdict, dataclass, is_dataclass, make_dataclass
-from typing import Optional, Type
+from dataclasses import asdict, dataclass, is_dataclass
+from typing import Optional, Type, Any, TypeVar
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
-from sqlalchemy import DATETIME, TIMESTAMP, MetaData, func, Insert
+from sqlalchemy import DATETIME, TIMESTAMP, MetaData, func, UpdateBase, Result, insert, ValuesBase
+from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDataclass
+
+Query = TypeVar("Query", bound=ValuesBase)
+Model = TypeVar("Model", bound=DeclarativeAttributeIntercept)
 
 
 @dataclass
@@ -81,8 +85,16 @@ class Postgres(BaseAccessor):
             await self._engine.dispose()
         self.logger.info("Disconnected from Postgres")
 
-    async def insert(self, smtp: Insert):
-        async with self.session.begin().session as session:
-            result_data = await session.execute(smtp)
+    @staticmethod
+    def get_query_insert(model: Model, **insert_data) -> Query:
+        return insert(model).values(**insert_data)
+
+    @staticmethod
+    def get_query_update(model: Model, **update_data) -> Query:
+        return insert(model).values(**update_data)
+
+    async def query_execute(self, query: Query | UpdateBase, ) -> Result[Any]:
+        async with self.app.postgres.session.begin().session as session:
+            result = await session.execute(query)
             await session.commit()
-            return result_data
+            return result

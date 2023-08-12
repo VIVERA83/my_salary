@@ -9,7 +9,7 @@ from sqlalchemy import Delete, Insert, Update, insert, select, update, Select
 from store.user.models import UserModel
 
 
-@TryRun(total_timeout=15, group="postgres")
+# @TryRun(total_timeout=15, group="postgres")
 class UserAccessor(BaseAccessor):
     """Authorization service."""
 
