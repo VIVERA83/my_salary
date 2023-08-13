@@ -1,7 +1,6 @@
 """Место окончательной сборки приложения."""
 
 from core.components import Application
-
 # from core.exceptions import setup_exception
 from core.logger import setup_logging
 from core.middelware import setup_middleware

@@ -2,7 +2,7 @@ from typing import Optional
 
 from base.base_accessor import BaseAccessor
 from base.type_hint import Sorted_order
-from sqlalchemy import select
+from store.database.postgres import Query
 from store.user.models import UserModel
 
 
@@ -27,10 +27,8 @@ class UserAccessor(BaseAccessor):
         Returns:
             object: UserModel
         """
-        query = self.app.postgres.get_query_insert(
-            UserModel, name=name, email=email, password=password, is_superuser=is_superuser
-        )
-        result = await self.app.postgres.query_execute(query.returning(UserModel))
+        query = self.get_query_create_user(name, email, password, is_superuser)
+        result = await self.app.postgres.query_execute(query)
         return result.scalar_one_or_none()
 
     async def get_user_by_email(self, email: str) -> Optional[UserModel]:
@@ -84,3 +82,24 @@ class UserAccessor(BaseAccessor):
         query = self.app.postgres.get_query_filter(UserModel, page, size, sort_params)
         result = await self.app.postgres.query_execute(query)
         return result.scalars().all()  # noqa
+
+    def get_query_create_user(
+        self,
+        name: str,
+        email: str,
+        password: str,
+        is_superuser: Optional[bool] = None,
+    ) -> Query:
+        """Get query created user.
+
+        Args:
+            name: name
+            email: user email
+            password: user password
+            is_superuser: default None
+        Returns:
+            object: user Query
+        """
+        return self.app.postgres.get_query_insert(
+            UserModel, name=name, email=email, password=password, is_superuser=is_superuser
+        ).returning(UserModel)

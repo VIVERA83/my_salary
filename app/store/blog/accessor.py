@@ -3,24 +3,24 @@ from typing import Optional
 from base.base_accessor import BaseAccessor
 from base.type_hint import Sorted_order
 from store.blog.models import TopicModel, UserModel
+from store.database.postgres import Query
 
 
 class BlogAccessor(BaseAccessor):
     """Blog service."""
 
-    async def create_user(self, user_id: str, name: str, email: str):
+    async def create_user(self, name: str, email: str):
         """Create a new user.
 
         Args:
-            user_id: Unique user identifier, UUID
             name: Name of the new user
             email: Email address, EmailStr
 
         Returns:
             object: User object, UserModel
         """
-        query = self.app.postgres.get_query_insert(UserModel, id=user_id, name=name, email=email)
-        result = await self.app.postgres.query_execute(query.returning(UserModel))
+        query = self.get_query_create_user(name, email)
+        result = await self.app.postgres.query_execute(query)
         return result.scalar_one_or_none()
 
     async def create_topic(self, title: str, description: str) -> Optional[TopicModel]:
@@ -68,3 +68,8 @@ class BlogAccessor(BaseAccessor):
         query = self.app.postgres.get_query_filter(TopicModel, page, size, sort_params)
         result = await self.app.postgres.query_execute(query)
         return result.scalars().all()  # noqa
+
+    def get_query_create_user(self, name: str, email: str) -> Query:
+        return self.app.postgres.get_query_insert(UserModel, name=name, email=email).returning(
+            UserModel
+        )

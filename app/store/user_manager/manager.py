@@ -4,14 +4,12 @@ from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import AuthorizationSettings
-from core.utils import Token
-from fastapi import Request, Response
 from icecream import ic
-from pydantic import EmailStr
-from store.user_manager.utils import User, set_cookie, unset_cookie
+from pydantic import EmailStr, SecretStr
+from store.blog.models import UserModel
 
-NAME = Dict["name", str]
-EMAIL = Dict["email", EmailStr]
+ic.includeContext = True
+Field_names = Literal["id", "name", "email", "password", "created", "modified"]
 
 USER_DATA_KEY = Literal[
     "name",
@@ -22,19 +20,16 @@ USER_DATA_KEY = Literal[
     "access_token",
 ]
 
-CREATE_USER_DATA = Dict[NAME | EMAIL, Any]
-USER_DATA = Dict[
-    NAME,
-    EMAIL,
-]
-ic.includeContext = True
+CREATE_USER_DATA = Dict[Field_names, Any]
+USER_DATA = Dict[Field_names, Any]
 
 
 class UserManager(BaseAccessor):
     def _init(self):
         self.settings = AuthorizationSettings()
+        self.expire = 180
 
-    async def create_user(self, **user_data: CREATE_USER_DATA) -> User:
+    async def create_user(self, name: str, email: EmailStr, password: str):
         """Create temporary user data.
 
         1. Check email address in cache.
@@ -44,104 +39,114 @@ class UserManager(BaseAccessor):
         5. Send letter in email for verification email addresses.
 
         Args:
-            user_data: Requested user data
+            name: User
+            email: User email address
+            password: hash of password
         """
-        user = User(**user_data)
-        seconds = await self.app.store.cache.ttl(user.email)
+        seconds = await self.app.store.cache.ttl(email)
         assert -1 > seconds, (
-            f"A letter has been sent to this email address '{user.email}',"
+            f"A letter has been sent to this email address '{email}',"
             f" check the email or the address is not specified correctly."
             f"Resending an email is possible after {seconds} seconds"
         )
-        assert not await self.app.store.auth.get_user_by_email(
-            user.email
-        ), f"Email is already in use, try other email address, not these '{user.email}'"
-        token = self.app.store.token.create_verification_token(uuid4().hex, user.email)
-        ic("create token ", token)
-        await self.app.store.cache.set(user.email, user.as_string, 180)
-        await self.app.store.ems.send_message_to_confirm_email(
-            user.email, user.name, token, link="test"
+        user = await self.app.store.auth.get_user_by_email(email)
+        assert not user, f"Email is already in use, try other email address, not these '{email}'"
+        token = self.app.store.token.create_verification_token(uuid4().hex, email)
+        ic("create verification token ", token)
+        user_str = json.dumps(
+            {
+                "name": name or "Пользователь",
+                "email": email,
+                "password": password,
+                "id": uuid4().hex,
+            }
         )
-        return user
+        await self.app.store.cache.set(email, user_str, self.expire)
+        await self.app.store.ems.send_message_to_confirm_email(email, name, token, link="test")
 
-    async def user_registration(
-        self, token: Token, response: Response
-    ) -> dict[USER_DATA_KEY, Any]:
+    async def user_registration(self, email: EmailStr) -> tuple[dict[USER_DATA_KEY, Any], str]:
         """Registration new user.
 
         Save in database user data, creates tokens."""
-        user_data = await self.app.store.cache.get(token.email)
+        user_data = await self.app.store.cache.get(email)
         assert user_data, "User data, not found, please try again creating user"
-        user = User(**json.loads(user_data))
+        user_data = json.loads(user_data)
+        try:
+            async with self.app.postgres.session.begin().session as session:
+                query_user = self.app.store.auth.get_query_create_user(
+                    user_data["name"], email, user_data["password"]
+                )
+                query_user_blog = self.app.store.blog.get_query_create_user(
+                    user_data["name"], email
+                )
+                user, user_blog = [
+                    (await session.execute(q)).scalar_one_or_none()
+                    for q in [query_user, query_user_blog]
+                ]
+                access, refresh = self._create_access_and_refresh_tokens(user.id.hex, user.email)
+                await self.app.store.auth.update_refresh_token(user.id, refresh)
+                await session.commit()
+                await self.app.store.cache.delete(email)
+        except Exception as e:
+            await session.rollback()
+            raise e
+        else:
+            return {**user.as_dict(), "access_token": access}, refresh
 
-        async with self.app.postgres.session.begin().session as session:
-            new_user = await self.app.store.auth.create_user(
-                user.name, user.email, user.password, user.is_superuser
-            )
-            user_blog = await self.app.store.blog.create_user(
-                new_user.id, new_user.name, new_user.email
-            )
-            session.add_all([new_user, user_blog])
-            access_token, refresh_token = self.create_access_refresh_cookie(
-                new_user.id.hex, new_user.email, response
-            )
-            await self.app.store.cache.set(
-                token.token, new_user.id.hex, self.settings.auth_access_expires_delta
-            )
-            await session.commit()
-        return {**new_user.as_dict(), "access_token": access_token}
+    async def login(
+        self, email: EmailStr, password: SecretStr
+    ) -> tuple[dict[USER_DATA_KEY, Any], str]:
+        """Login user amd create new tokens.
 
-    async def login(self, response: Response, **user_data) -> dict[USER_DATA_KEY, Any]:
-        """Login user amd create new tokens."""
-        user = await self.app.store.auth.get_user_by_email(user_data["email"])
+        1. Check email in database
+        2. Compare password in database
+        3. Update refresh token in database
+
+        Args:
+            email: user email address
+            password: hash password, for compare in database
+
+        Returns:
+             objects: user data, new refresh token
+        """
+        user = await self.app.store.auth.get_user_by_email(email)
         assert user, "User not found"
-        assert user.password == user_data["password"], "Password is incorrect"
-        access_token, refresh_token = self.create_access_refresh_cookie(
-            user.id.hex, user.email, response
-        )
-        return {**user.as_dict(), "access_token": access_token}
+        assert user.password == password.get_secret_value(), "Password is incorrect"
+        access, refresh = self._create_access_and_refresh_tokens(user.id.hex, user.email)
+        user = await self.app.store.auth.update_refresh_token(user.id, refresh)
+        return {**user.as_dict(), "access_token": access}, refresh
 
-    async def logout(self, response: Response, user_id: str, token: str, expire: int):
-        unset_cookie("refresh", response)
+    async def logout(self, user_id: str, token: str, expire: int):
+        """Logout the user.
+
+        Args:
+            user_id: Unique identifier for the user, UUID
+            token: refresh token
+            expire: number of seconds
+        """
         await self.app.store.cache.set(token, user_id, expire + 5)
         await self.app.store.auth.update_refresh_token(user_id)
 
-    async def refresh(self, request: Request, response: Response) -> dict[USER_DATA_KEY, Any]:
-        """Refresh the user tokens."""
-        token_raw = request.cookies.get("refresh")
-        assert token_raw, "Refresh token cookie is missing"
-        token = Token(token_raw)
-        user = await self.app.store.auth.get_user_by_email(token.email)
-        assert user, "User not found"
-        access_token, refresh_token = self.create_access_refresh_cookie(
-            user.id.hex, user.email, response, request.client.host
-        )
-        return {**user.as_dict(), "access_token": access_token}
+    async def refresh(self, email: EmailStr) -> tuple[dict[USER_DATA_KEY, Any], str]:
+        """Refresh the user tokens.
 
-    def create_access_refresh_cookie(
-        self, user_id: str, email: EmailStr, response: Response, domain: str = None
-    ) -> [str, str]:
-        """Create access and refresh cookie, and add refresh token to cookie.
+        1. Compare refresh and token from user in Database
+        2. Create new refresh, access tokens and update database and cookies
 
         Args:
-            user_id: the identifier of the user
-            email: user email
-            response: Response
-            domain: domain name
-        """
-        access_token, refresh_token = self.app.store.token.create_access_and_refresh_tokens(
-            user_id, email
-        )
-        set_cookie(
-            "refresh",
-            refresh_token,
-            response,
-            self.settings.auth_refresh_expires_delta,
-            domain=domain,
-        )
-        return access_token, refresh_token
+            email: user email address
 
-    async def reset_password(self, email: EmailStr) -> User:
+        Returns:
+            objects: user data, new refresh token
+        """
+        user = await self.app.store.auth.get_user_by_email(email)
+        assert not user, "User not found"
+        access, refresh = self._create_access_and_refresh_tokens(user.id.hex, user.email)
+        user = await self.app.store.auth.update_refresh_token(user.id, refresh)
+        assert not user, "User not found"
+        return {**user.as_dict(), "access_token": access}, refresh
+
+    async def reset_password(self, email: EmailStr):
         """Initializing reset user password.
 
         1. Check user_id in cache.
@@ -150,20 +155,15 @@ class UserManager(BaseAccessor):
         4. Add cache token.
         5. Send an email with a token to change password
         """
-        try:
-            user = await self.app.store.auth.get_user_by_email(email)
-            assert user, f"User with email address {email} not found."
-            seconds = await self.app.store.cache.ttl(user.email)
-            assert -1 > seconds, (
-                f"A letter has been sent to this email address '{user.email}',"
-                f" check the email or the address is not specified correctly."
-                f"Resending an email is possible after {seconds} seconds"
-            )
-        except AssertionError as e:
-            raise e
-        except Exception as e:
-            raise ConnectionError(e.args[0])
-
+        # try:
+        user = await self.app.store.auth.get_user_by_email(email)
+        assert user, f"User with email address {email} not found."
+        seconds = await self.app.store.cache.ttl(user.email)
+        assert -1 > seconds, (
+            f"A letter has been sent to this email address '{user.email}',"
+            f" check the email or the address is not specified correctly."
+            f"Resending an email is possible after {seconds} seconds"
+        )
         token = self.app.store.token.create_reset_token(user.id.hex, user.email)
         ic(token)
         flag = False
@@ -176,6 +176,18 @@ class UserManager(BaseAccessor):
         except Exception as e:
             if flag:
                 await self.app.store.cache.delete(user.email)
-            raise ConnectionError(e.args[0])
-        else:
-            return user
+            raise e
+
+    def _create_access_and_refresh_tokens(self, user_id: str, email: EmailStr) -> tuple[str, str]:
+        """Create access, refresh tokens.
+
+        Args:
+            user_id: user unique identifier, UUID
+            email: user email address
+
+        Returns:
+            list of tokens
+        """
+        access_token = self.app.store.token.create_access_token(user_id, email)
+        refresh_token = self.app.store.token.create_refresh_token(user_id, email)
+        return access_token, refresh_token

@@ -1,36 +1,21 @@
 """Views сервиса авторизации (AUTH)."""
-
 from typing import Any
 
 from base.type_hint import Sorted_direction
 from core.components import Request
+from core.utils import Token
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from pydantic import EmailStr
-from user.schemes import (
-    BaseUserSchema,
-    OkSchema,
-    RefreshSchema,
-    TokenSchema,
-    UserPasswordSchema,
-    UserSchemaLogin,
-    UserSchemaOut,
-    UserSchemaRegistration,
-    query_page_number,
-    query_page_size,
-    query_sort_created,
-    query_sort_email,
-    query_sort_modified,
-    query_sort_name,
-    query_sort_user_id,
-)
-from user.utils import (
-    description_create_user,
-    description_login_user,
-    description_logout_user,
-    description_refresh_tokens,
-    description_registration_user,
-)
+from user.schemes import (BaseUserSchema, OkSchema, TokenSchema,
+                          UserPasswordSchema, UserSchemaLogin, UserSchemaOut,
+                          UserSchemaRegistration, query_page_number,
+                          query_page_size, query_sort_created,
+                          query_sort_email, query_sort_modified,
+                          query_sort_name, query_sort_user_id)
+from user.utils import (description_create_user, description_login_user,
+                        description_logout_user, description_refresh_tokens,
+                        description_registration_user)
 
 auth_route = APIRouter(prefix="/auth", tags=["AUTH"])
 
@@ -59,13 +44,11 @@ async def create_user(
     Returns:
         object: UserSchemaOut
     """
-    temp_user = await request.app.store.auth_manager.create_user(**user.model_dump())
-    return OkSchema(
-        message=f"Sent  letter  to  {temp_user.email}, for verification email addresses"
-    )
+    await request.app.store.auth_manager.create_user(user.name, user.email, user.password)
+    return OkSchema(message=f"Sent letter to {user.email}, for verification email addresses")
 
 
-@auth_route.get(
+@auth_route.post(
     "/registration_user",
     summary="Регистрация пользователя",
     description=description_registration_user,
@@ -82,7 +65,10 @@ async def user_registration(request: "Request", response: Response) -> Any:
         request: Request
         response: Response
     """
-    return await request.app.store.auth_manager.user_registration(request.state.token, response)
+    token = request.state.token
+    user_data, refresh_token = await request.app.store.auth_manager.user_registration(token.email)
+    response.set_cookie(key="refresh", value=refresh_token, httponly=True)
+    return UserSchemaOut(**user_data)
 
 
 @auth_route.post(
@@ -103,7 +89,11 @@ async def login(request: "Request", response: Response, user: UserSchemaLogin) -
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    return await request.app.store.auth_manager.login(response, **user.model_dump())
+    user_data, refresh_token = await request.app.store.auth_manager.login(
+        user.email, user.password
+    )
+    response.set_cookie(key="refresh", value=refresh_token, httponly=True)
+    return UserSchemaOut(**user_data)
 
 
 @auth_route.get(
@@ -123,15 +113,16 @@ async def logout(request: "Request", response: Response) -> Any:
         object: OkSchema
     """
     token = request.state.token
-    await request.app.store.auth_manager.logout(response, token.user_id, token.token, token.exp)
-    return OkSchema()
+    await request.app.store.auth_manager.logout(token.user_id, token.token, token.exp)
+    response.set_cookie(key="refresh", httponly=True, max_age=-1)
+    return OkSchema(message="Log out user")
 
 
 @auth_route.get(
     "/refresh",
     summary="Обновить токен доступа",
     description=description_refresh_tokens,
-    response_model=RefreshSchema,
+    response_model=UserSchemaOut,
 )
 async def refresh(request: "Request", response: Response) -> Any:
     """Update tokens.
@@ -143,7 +134,11 @@ async def refresh(request: "Request", response: Response) -> Any:
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    return await request.app.store.auth_manager.refresh(request, response)
+    token = request.cookies.get("refresh")
+    assert token, "Refresh token in cookie not found"
+    user_data, refresh_token = await request.app.store.auth_manager.refresh(Token(token).email)
+    response.set_cookie(key="refresh", value=refresh_token, httponly=True)
+    return UserSchemaOut(**user_data)
 
 
 @auth_route.get(
@@ -177,11 +172,11 @@ async def reset_password(request: Request, email: EmailStr) -> Any:
     Returns:
         optional: OkSchema
     """
-    user = await request.app.store.auth_manager.reset_password(email)
-    return OkSchema(message=f"Sent letter to {user.email}, for reset password")
+    await request.app.store.auth_manager.reset_password(email)
+    return OkSchema(message=f"Sent letter to {email}, for reset password")
 
 
-@auth_route.post(
+@auth_route.patch(
     "/update_password",
     summary="Задать новый пароль",
     description="Enter password",

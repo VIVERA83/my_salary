@@ -111,8 +111,6 @@ class ExceptionHandler:
                     f" WE NEED TO RESPOND URGENTLY"
                     f" \nExceptionHandler:  {str(self.exception)}\n"
                     f" _____________\n" + traceback.format_exc()
-                    if not self.is_traceback
-                    else ""
                 )
                 self.logger.critical(msg)
             case "ERROR" | 40:

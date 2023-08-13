@@ -1,6 +1,7 @@
 """Полезные утилиты используемые в приложении."""
 import logging
-from asyncio import Event, Semaphore, create_task, get_event_loop, sleep, wait_for
+from asyncio import (Event, Semaphore, create_task, get_event_loop, sleep,
+                     wait_for)
 from collections import defaultdict
 from concurrent import futures
 from functools import wraps

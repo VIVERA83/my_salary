@@ -6,24 +6,12 @@ from uuid import uuid4
 from base.base_accessor import BaseAccessor
 from base.type_hint import Sorted_order
 from core.settings import PostgresSettings
-from sqlalchemy import (
-    DATETIME,
-    TIMESTAMP,
-    Delete,
-    MetaData,
-    Result,
-    Select,
-    UpdateBase,
-    ValuesBase,
-    delete,
-    func,
-    insert,
-    select,
-    text,
-    update,
-)
+from sqlalchemy import (DATETIME, TIMESTAMP, Delete, MetaData, Result, Select,
+                        UpdateBase, ValuesBase, delete, func, insert, select,
+                        text, update)
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    create_async_engine)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 
@@ -170,6 +158,20 @@ class Postgres(BaseAccessor):
         """
         async with self.app.postgres.session.begin().session as session:
             result = await session.execute(query)
+            await session.commit()
+            return result
+
+    async def query_executes(self, *query: Query) -> list[Result[Any]]:
+        """Query executes.
+
+        Args:
+            query: CRUD query for Database
+
+        Returns:
+              Any: result of query
+        """
+        async with self.app.postgres.session as session:
+            result = [await session.execute(q) for q in query]
             await session.commit()
             return result
 

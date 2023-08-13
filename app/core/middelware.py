@@ -10,7 +10,8 @@ from core.utils import PUBLIC_ACCESS, Token
 from fastapi import HTTPException, status
 from icecream import ic
 from jose import JWSError, jws
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.middleware.base import (BaseHTTPMiddleware,
+                                       RequestResponseEndpoint)
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request

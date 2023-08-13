@@ -3,18 +3,11 @@ from typing import Any
 from uuid import UUID
 
 from base.type_hint import Sorted_direction
-from blog.topic.schemes import (
-    TopicSchemaIn,
-    TopicSchemaOut,
-    TopicSchemaUpdateIn,
-    query_page_number,
-    query_page_size,
-    query_sort_created,
-    query_sort_description,
-    query_sort_modified,
-    query_sort_title,
-    query_sort_topic_id,
-)
+from blog.topic.schemes import (TopicSchemaIn, TopicSchemaOut,
+                                TopicSchemaUpdateIn, query_page_number,
+                                query_page_size, query_sort_created,
+                                query_sort_description, query_sort_modified,
+                                query_sort_title, query_sort_topic_id)
 from core.components import Request
 from fastapi import APIRouter
 
