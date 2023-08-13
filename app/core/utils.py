@@ -1,5 +1,5 @@
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, asdict
 from typing import Literal
 
 from jose import jws
@@ -46,7 +46,6 @@ PUBLIC_ACCESS = [
     ["/auth/reset_password", "POST"],
     ["/auth/reset_password", "GET"],
 ]
-
 
 METHODS = [
     "HEAD",

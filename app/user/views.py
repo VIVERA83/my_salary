@@ -3,7 +3,7 @@ from typing import Any
 
 from base.type_hint import Sorted_direction
 from core.components import Request
-from core.utils import Token
+# from core.utils import Token
 from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from pydantic import EmailStr
@@ -134,7 +134,7 @@ async def refresh(request: "Request", response: Response) -> Any:
     Returns:
         Response or HTTPException 401 UNAUTHORIZED
     """
-    token = request.cookies.get("refresh")
+    token = request.cookies.get("access_token")
     assert token, "Refresh token in cookie not found"
     user_data, refresh_token = await request.app.store.auth_manager.refresh(Token(token).email)
     response.set_cookie(key="refresh", value=refresh_token, httponly=True)

@@ -1,12 +1,11 @@
 import json
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import AuthorizationSettings
-from icecream import ic
 from pydantic import EmailStr, SecretStr
-from store.blog.models import UserModel
+from icecream import ic
 
 ic.includeContext = True
 Field_names = Literal["id", "name", "email", "password", "created", "modified"]
@@ -19,9 +18,6 @@ USER_DATA_KEY = Literal[
     "refresh_token",
     "access_token",
 ]
-
-CREATE_USER_DATA = Dict[Field_names, Any]
-USER_DATA = Dict[Field_names, Any]
 
 
 class UserManager(BaseAccessor):
@@ -94,7 +90,7 @@ class UserManager(BaseAccessor):
             return {**user.as_dict(), "access_token": access}, refresh
 
     async def login(
-        self, email: EmailStr, password: SecretStr
+            self, email: EmailStr, password: SecretStr
     ) -> tuple[dict[USER_DATA_KEY, Any], str]:
         """Login user amd create new tokens.
 
