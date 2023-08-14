@@ -1,11 +1,11 @@
 """Database..."""
-from dataclasses import asdict, is_dataclass, dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from typing import Optional, Type
 from uuid import uuid4
 
 from base.base_accessor import BaseAccessor
 from core.settings import PostgresSettings
-from sqlalchemy import MetaData, TIMESTAMP, func, DATETIME
+from sqlalchemy import DATETIME, TIMESTAMP, MetaData, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column

@@ -1,11 +1,10 @@
 """Views сервиса по работе с темами для постов (TOPIC)."""
 from typing import Any
 
-from icecream import ic
-
-from blog.topic.schemes import TopicSchemaOut, TopicSchemaIn, TopicSchemaUpdateIn
+from blog.topic.schemes import TopicSchemaIn, TopicSchemaOut, TopicSchemaUpdateIn
 from core.components import Request
 from fastapi import APIRouter
+from icecream import ic
 
 topic_route = APIRouter(prefix="/topic")
 
@@ -18,8 +17,7 @@ topic_route = APIRouter(prefix="/topic")
     tags=["TOPIC"],
     response_model=TopicSchemaOut,
 )
-async def create_topic(request: Request,
-                       topic: TopicSchemaIn) -> Any:
+async def create_topic(request: Request, topic: TopicSchemaIn) -> Any:
     ic(topic)
     topic_data = await request.app.store.blog.create_topic(**topic.model_dump())
     return TopicSchemaOut(**topic_data.as_dict())
@@ -29,9 +27,9 @@ async def create_topic(request: Request,
     "/update_topic",
     summary="Обновить данные о теме.",
     description="Обновление данных темы для постов. "
-                "Возможно обновление как всех так и по отдельности полей темы: "
-                "Просто указываете те поля которые требуется изменить. "
-                "Обратите внимание, менять значение поля `id` не возможно.",
+    "Возможно обновление как всех так и по отдельности полей темы: "
+    "Просто указываете те поля которые требуется изменить. "
+    "Обратите внимание, менять значение поля `id` не возможно.",
     response_description="Полная информация о обновленной теме",
     tags=["TOPIC"],
     response_model=TopicSchemaOut,

@@ -1,5 +1,6 @@
 """Middleware приложения."""
-from core.components import Application, Request as RequestApp
+from core.components import Application
+from core.components import Request as RequestApp
 from core.settings import AuthorizationSettings, Settings
 from core.utils import (
     PUBLIC_ACCESS,

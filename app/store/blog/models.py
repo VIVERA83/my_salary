@@ -1,11 +1,10 @@
+from dataclasses import dataclass
 from uuid import uuid4
 
-from sqlalchemy import String, TIMESTAMP, func, DATETIME
+from sqlalchemy import DATETIME, TIMESTAMP, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
 from store.database.postgres import Base
-from dataclasses import dataclass
 
 
 @dataclass

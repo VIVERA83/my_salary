@@ -1,6 +1,5 @@
 """"Routes приложения """
 from blog.topic.views import topic_route
-
 from core.components import Application
 from user.views import auth_route
 

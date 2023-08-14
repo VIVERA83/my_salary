@@ -152,6 +152,8 @@ def get_error_content(message: str) -> tuple[str, str]:
     m = re.findall(r"\(([A-Za-z0-9_@.]+)\)", message)
     ic(m, message)
     return m[1], m[2]
+
+
 #
 #
 # <<<<<<< HEAD
@@ -194,19 +196,19 @@ class ExceptionHandler:
         self.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         self.is_traceback = False
 
-# <<<<<<< HEAD
-#     def __new__(
-#         cls,
-#         exception: Exception,
-#         url: URL,
-#         logger: Logger = Logger(__name__),
-# =======
+    # <<<<<<< HEAD
+    #     def __new__(
+    #         cls,
+    #         exception: Exception,
+    #         url: URL,
+    #         logger: Logger = Logger(__name__),
+    # =======
     def __call__(
         self,
         exception: Exception,
         url: URL,
         logger: Logger = None,
-# >>>>>>> blog
+        # >>>>>>> blog
         is_traceback: bool = False,
     ) -> JSONResponse:
         self.exception = exception

@@ -1,11 +1,10 @@
 from typing import Optional
 from uuid import UUID
 
-from icecream import ic
-
 from base.base_accessor import BaseAccessor
+from icecream import ic
 from sqlalchemy import insert
-from store.blog.models import UserModel, TopicModel
+from store.blog.models import TopicModel, UserModel
 
 ic.includeContext = True
 
@@ -14,10 +13,10 @@ class BlogAccessor(BaseAccessor):
     """Blog service."""
 
     async def create_user(
-            self,
-            user_id: UUID,
-            name: str,
-            email: str,
+        self,
+        user_id: UUID,
+        name: str,
+        email: str,
     ) -> Optional[UserModel]:
         """Adding a new user to the database.
 
@@ -47,14 +46,20 @@ class BlogAccessor(BaseAccessor):
 
     async def create_topic(self, title: str, description: str) -> Optional[TopicModel]:
         async with (self.app.postgres.session.begin().session as session):
-            smtp = insert(TopicModel).values(
-                title=title,
-                description=description,
-            ).returning(TopicModel)
+            smtp = (
+                insert(TopicModel)
+                .values(
+                    title=title,
+                    description=description,
+                )
+                .returning(TopicModel)
+            )
 
             topic = await session.execute(smtp)
             await session.commit()
             return topic.fetchone()[0]
 
-    async def update_topic(self, title: str = None, description: str = None) -> Optional[TopicModel]:
+    async def update_topic(
+        self, title: str = None, description: str = None
+    ) -> Optional[TopicModel]:
         ...

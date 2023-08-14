@@ -25,7 +25,6 @@ class Store:
         self.blog = BlogAccessor(app)
 
 
-
 def setup_store(app):
     """Configuring the connection and disconnection of storage.
 
