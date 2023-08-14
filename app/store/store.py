@@ -3,7 +3,8 @@ from store.blog.accessor import BlogAccessor
 from store.cache.accessor import CacheAccessor
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
-from store.jwt.jwt import JWTAccessor
+from store.ems.ems import EmailMessageService
+from store.token.accessor import TokenAccessor
 from store.user.accessor import UserAccessor
 from store.user_manager.manager import UserManager
 
@@ -19,10 +20,11 @@ class Store:
         """
 
         self.auth = UserAccessor(app)
-        self.jwt = JWTAccessor(app)
+        self.token = TokenAccessor(app)
         self.auth_manager = UserManager(app)
-        self.invalid_token = CacheAccessor(app)
+        self.cache = CacheAccessor(app)
         self.blog = BlogAccessor(app)
+        self.ems = EmailMessageService(app)
 
 
 def setup_store(app):

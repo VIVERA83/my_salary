@@ -12,8 +12,8 @@ class RedisAccessor(BaseAccessor):
 
     async def connect(self):
         self.settings = RedisSettings()
-        self.connector = await redis.from_url(self.settings.dsn, decode_responses=True)
-        self.logger.info("Connected to Redis")
+        self.connector = await redis.from_url(self.settings.dsn(True), decode_responses=True)
+        self.logger.info("Connected to Redis, {dsn}".format(dsn=self.settings.dsn()))
 
     async def disconnect(self):
         await self.connector.close()

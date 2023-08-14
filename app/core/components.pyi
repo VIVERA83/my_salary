@@ -2,13 +2,12 @@ import logging
 from typing import Optional
 
 from core.settings import Settings
+from core.utils import Token
 from fastapi import FastAPI
 from fastapi import Request as FastAPIRequest
-from redis.client import Redis
 from store.database.postgres import Postgres
 from store.database.redis import RedisAccessor
 from store.store import Store
-from user.schemes import TokenSchema
 
 class Application(FastAPI):
     """Application главный класс.
@@ -48,5 +47,5 @@ class CustomState:
     Для корректной подсказки IDE по методам `Request`.
     """
 
-    access_token: Optional["TokenSchema"]
+    token: Optional["Token"]
     user_id: Optional[str] = None

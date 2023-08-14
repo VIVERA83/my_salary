@@ -1,18 +1,17 @@
 """Middleware приложения."""
+import re
+from datetime import datetime
+
 from core.components import Application
 from core.components import Request as RequestApp
+from core.exception_handler import ExceptionHandler
 from core.settings import AuthorizationSettings, Settings
-from core.utils import (
-    PUBLIC_ACCESS,
-    ExceptionHandler,
-    check_path,
-    get_access_token,
-    update_request_state,
-    verification_public_access,
-    verify_token,
-)
-from fastapi import status
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from core.utils import PUBLIC_ACCESS, Token
+from fastapi import HTTPException, status
+from icecream import ic
+from jose import JWSError, jws
+from starlette.middleware.base import (BaseHTTPMiddleware,
+                                       RequestResponseEndpoint)
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
@@ -22,7 +21,7 @@ from store.cache.accessor import CacheAccessor
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
-    """Обработка внутренних ошибок при выполнении обработчиков запроса."""
+    """Обработка ошибок при выполнении обработчиков запроса."""
 
     def __init__(self, app: ASGIApp):
         super().__init__(app)
@@ -32,6 +31,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: RequestApp, call_next: RequestResponseEndpoint) -> Response:
         """Обработка ошибок при исполнении handlers (views)."""
         try:
+            self.is_endpoint(request)
             response = await call_next(request)
             return response
         except Exception as error:
@@ -39,16 +39,45 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                 error, request.url, request.app.logger, self.settings.app_logging.traceback
             )
 
+    @staticmethod
+    def is_endpoint(request: "Request") -> bool:
+        """Checking if there is a requested endpoint.
+
+        Args:
+            request: Request object
+
+        Returns:
+            object: True if there is a endpoint
+        """
+        detail = "{message}, See the documentation: http://{host}:{port}{uri}"
+        message = "Not Found"
+        status_code = status.HTTP_404_NOT_FOUND
+        for route in request.app.routes:
+            if re.match(route.path_regex, request.url.path):
+                if request.method.upper() in route.methods:
+                    return True
+                status_code = status.HTTP_405_METHOD_NOT_ALLOWED
+                message = "Method Not Allowed"
+                ic(route.methods)
+                break
+        raise HTTPException(
+            status_code,
+            detail.format(
+                message=message,
+                host=request.app.settings.app_server_host,
+                port=request.app.settings.app_port,
+                uri=request.app.docs_url,
+            ),
+        )
+
 
 class AuthorizationMiddleware(BaseHTTPMiddleware):
     """Authorization MiddleWare."""
 
-    def __init__(self, app: ASGIApp, invalid_token: CacheAccessor):
-        self.invalid_token = invalid_token
+    def __init__(self, app: ASGIApp, cache: CacheAccessor):
+        self.cache = cache
         self.settings = AuthorizationSettings()
-        self.is_traceback = Settings().app_logging.traceback
         self.public_access = PUBLIC_ACCESS
-        self.exception_handler = ExceptionHandler()
         super().__init__(app)
 
     async def dispatch(
@@ -67,36 +96,99 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         Returns:
             object: Response
         """
-
-        if check_path(request) or verification_public_access(request, self.public_access):
-            return await call_next(request)
-        try:
-            token = get_access_token(request)
-            assert not await self.invalid_token.get_token(token), [
-                "Access token is invalid",
-                status.HTTP_401_UNAUTHORIZED,
-            ]
-            verify_token(token, self.settings.auth_key, self.settings.auth_algorithms)
-        except Exception as error:
-            return self.exception_handler(
-                error,
-                request.url,
-                request.app.logger,
-                self.is_traceback,
-            )
-        update_request_state(request, token)
+        token = self.extract_token(request)
+        if token.token:
+            await self.verify_token(token)
+        self.check_permission(token.type, request.url.path, request.method)
+        self.update_request_state(request, token)
         return await call_next(request)
+
+    async def verify_token(self, token: Token):
+        try:
+            ic(token)
+            assert -2 == await self.cache.ttl(
+                token.token
+            ), f"The token {token.type} is blocked, an attempt to log in using the old token, a new token is needed"
+            assert token.exp > int(
+                datetime.now().timestamp()
+            ), f"The '{token.type}' token has expired."
+            jws.verify(
+                token.token,
+                self.settings.auth_key.get_secret_value(),
+                self.settings.auth_algorithms,
+            )
+            return
+        except JWSError as e:
+            detail = status.HTTP_400_BAD_REQUEST
+            message = e.args[0]
+        except AssertionError as e:
+            detail = status.HTTP_401_UNAUTHORIZED
+            message = e.args[0]
+        raise HTTPException(detail, message)
+
+    def check_permission(self, token_type: str, path: str, method: str) -> bool:
+        """Check permissions in the given path and token type.
+
+        Args:
+            token_type: one of the 'recovery', verif', 'access'
+            path: endpoint path to check permissions
+            method: method to check permissions
+        """
+        ic(token_type, path)
+        match token_type, path:
+            case "anonymous", path:
+                if self.public_access.count([path, method.upper()]):
+                    return True
+            case "verification", "/auth/registration_user":
+                return True
+            case "reset", "/auth/update_password":
+                return True
+            case "access", path:
+                if path not in [
+                    "/auth/create_user",
+                    "/auth/registration_user",
+                ]:
+                    return True
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    @staticmethod
+    def extract_token(request: "Request") -> "Token":
+        """Попытка получить token из headers (authorization Bear).
+
+        Args:
+            request: Request
+
+        Returns:
+            object: access token
+        """
+        authorization = request.headers.get("Authorization", None)
+        if not authorization:
+            return Token()
+        bearer, *token = authorization.split(" ")
+        try:
+            assert "Bearer" == bearer, "Bearer header not specified"
+            assert token, "Token header not specified"
+        except AssertionError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args[0])
+        return Token("".join(token))
+
+    @staticmethod
+    def update_request_state(request: "Request", token: Token):
+        request.state.token = token
+        request.state.user_id = token.user_id
 
 
 def setup_middleware(app: Application):
     """Настройка подключаемый Middleware."""
-    app.add_middleware(SessionMiddleware, secret_key=app.settings.app_secret_key)
+    app.add_middleware(
+        SessionMiddleware, secret_key=app.settings.app_secret_key.get_secret_value()
+    )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=app.settings.app_secret_key,
+        allow_origins=app.settings.app_allowed_origins,
         allow_methods=app.settings.app_allow_methods,
         allow_headers=app.settings.app_allow_headers,
         allow_credentials=app.settings.app_allow_credentials,
     )
+    app.add_middleware(AuthorizationMiddleware, cache=app.store.cache)
     app.add_middleware(ErrorHandlingMiddleware)
-    app.add_middleware(AuthorizationMiddleware, invalid_token=app.store.invalid_token)

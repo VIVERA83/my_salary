@@ -1,65 +1,75 @@
 from typing import Optional
-from uuid import UUID
 
 from base.base_accessor import BaseAccessor
-from icecream import ic
-from sqlalchemy import insert
+from base.type_hint import Sorted_order
 from store.blog.models import TopicModel, UserModel
-
-ic.includeContext = True
+from store.database.postgres import Query
 
 
 class BlogAccessor(BaseAccessor):
     """Blog service."""
 
-    async def create_user(
-        self,
-        user_id: UUID,
-        name: str,
-        email: str,
-    ) -> Optional[UserModel]:
-        """Adding a new user to the database.
-
-        The user is created based on an entry from User in the authorization service.
+    async def create_user(self, name: str, email: str):
+        """Create a new user.
 
         Args:
-            user_id: id, unique identifier, giving in UserModel in database AUTH schema.
-            name: name
-            email: user email
+            name: Name of the new user
+            email: Email address, EmailStr
 
         Returns:
-            object: UserModel
+            object: User object, UserModel
         """
-        async with self.app.postgres.session.begin().session as session:
-            smtp = (
-                insert(UserModel)
-                .values(
-                    id=user_id,
-                    name=name,
-                    email=email,
-                )
-                .returning(UserModel)
-            )
-            user = await session.execute(smtp)
-            await session.commit()
-            return user.unique().fetchone()[0]
+        query = self.get_query_create_user(name, email)
+        result = await self.app.postgres.query_execute(query)
+        return result.scalar_one_or_none()
 
     async def create_topic(self, title: str, description: str) -> Optional[TopicModel]:
-        async with (self.app.postgres.session.begin().session as session):
-            smtp = (
-                insert(TopicModel)
-                .values(
-                    title=title,
-                    description=description,
-                )
-                .returning(TopicModel)
-            )
+        """Create topic.
 
-            topic = await session.execute(smtp)
-            await session.commit()
-            return topic.fetchone()[0]
+        Args:
+            title: name of topic
+            description: description topic
+
+        Returns:
+            object: Topic object, TopicModel
+        """
+        insert_data = {
+            name: value for index, (name, value) in enumerate(locals().items()) if index
+        }
+        query = self.app.postgres.get_query_insert(TopicModel, **insert_data)
+        result = await self.app.postgres.query_execute(query.returning(TopicModel))
+        return result.scalar_one_or_none()
 
     async def update_topic(
-        self, title: str = None, description: str = None
+        self, id: str, title: str = None, description: str = None
     ) -> Optional[TopicModel]:
-        ...
+        update_data = {
+            name: value
+            for index, (name, value) in enumerate(locals().items())
+            if int(index) > 1 and value
+        }
+        query = self.app.postgres.get_query_update_by_field(TopicModel, "id", id, **update_data)
+        result = await self.app.postgres.query_execute(query.returning(TopicModel))
+        return result.scalar_one_or_none()
+
+    async def delete_topic(self, id: str) -> Optional[TopicModel]:
+        query = self.app.postgres.get_query_delete_by_field(TopicModel, "id", id)
+        result = await self.app.postgres.query_execute(query.returning(TopicModel))
+        return result.scalar_one_or_none()
+
+    async def get_topic_by_id(self, id: str) -> Optional[TopicModel]:
+        query = self.app.postgres.get_query_select_by_field(TopicModel, "id", id)
+        result = await self.app.postgres.query_execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_topics(
+        self, page: int = 0, size: int = 10, sort_params: Sorted_order = None
+    ) -> list[TopicModel]:
+        query = self.app.postgres.get_query_filter(TopicModel, page, size, sort_params)
+        result = await self.app.postgres.query_execute(query)
+        return result.scalars().all()  # noqa
+
+    def get_query_create_user(self, name: str, email: str) -> Query:
+        return self.app.postgres.get_query_insert(UserModel, name=name, email=email).returning(
+            UserModel
+        )

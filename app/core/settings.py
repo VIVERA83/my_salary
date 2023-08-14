@@ -1,8 +1,8 @@
 """Модуль начальных настроек приложения."""
 import os
 
-from core.utils import ALGORITHMS, HEADERS, METHOD
-from pydantic import BaseModel, field_validator
+from core.utils import ALGORITHM, ALGORITHMS, HEADERS, METHOD
+from pydantic import BaseModel, EmailStr, SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
@@ -38,7 +38,7 @@ class Settings(Base):
     app_uvicorn_workers: int = 1
     app_server_host: str = "0.0.0.0"
 
-    app_secret_key: str = "secret_key"
+    app_secret_key: SecretStr
     app_allowed_origins: str | list[str] = "*"
     app_allow_methods: str | list[METHOD] = "*"
     app_allow_headers: str | list[HEADERS] = "*"
@@ -62,19 +62,20 @@ class Settings(Base):
 class PostgresSettings(Base):
     """Параметры подключения к PostgresQL"""
 
-    postgres_db: str = "test_db"
-    postgres_user: str = "test_user"
-    postgres_password: str = "test_password"
-    postgres_host: str = "127.0.0.1"
-    postgres_port: str = "5432"
-    postgres_db_schema: str = "public"
+    postgres_db: str
+    postgres_user: str
+    postgres_password: SecretStr
+    postgres_host: str
+    postgres_port: str
+    postgres_db_schema: str
 
-    @property
-    def dsn(self) -> str:
+    def dsn(self, show_secret: bool = False) -> str:
         """Возвращает link настройки."""
         return "postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}".format(
             user=self.postgres_user,
-            password=self.postgres_password,
+            password=self.postgres_password.get_secret_value()
+            if show_secret
+            else self.postgres_password,
             host=self.postgres_host,
             port=self.postgres_port,
             db=self.postgres_db,
@@ -82,17 +83,18 @@ class PostgresSettings(Base):
 
 
 class RedisSettings(Base):
-    redis_db: int = 1
-    redis_host: str = "0.0.0.0"
-    redis_port: int = 6379
-    redis_password: str
+    redis_db: int
+    redis_host: str
+    redis_port: int
+    redis_password: SecretStr
     redis_user: str = "default"
 
-    @property
-    def dsn(self) -> str:
+    def dsn(self, show_secret: bool = False) -> str:
         return "redis://{user}:{password}@{host}:{port}/{db}".format(
             user=self.redis_user,
-            password=self.redis_password,
+            password=self.redis_password.get_secret_value()
+            if show_secret
+            else self.redis_password,
             host=self.redis_host,
             port=self.redis_port,
             db=self.redis_db,
@@ -102,14 +104,30 @@ class RedisSettings(Base):
 class AuthorizationSettings(Base):
     """Authorization settings."""
 
-    auth_key: str = "authorization key"
-    auth_algorithms: str = "HS256"
-    auth_access_expires_delta: int = 120
-    auth_refresh_expires_delta: int = 3600
+    auth_key: SecretStr
+    auth_algorithms: str
+    auth_access_expires_delta: int
+    auth_refresh_expires_delta: int
 
     @field_validator("auth_algorithms")
-    def to_list(cls, data: str | list[ALGORITHMS]) -> list[ALGORITHMS]:  # noqa
+    def to_list(cls, data: str | list[ALGORITHM]) -> list[ALGORITHM]:  # noqa
         """Перевод строки в список."""
         if isinstance(data, str):
-            return data.replace(" ", "").split(",")  # noqa
+            data = data.replace(" ", "").split(",")  # noqa
+        for alg in data:
+            assert alg in ALGORITHMS, (
+                "The encryption algorithm '{alg}' is not supported,"
+                " you can use: {algs}.".format(alg=alg, algs=ALGORITHMS)
+            )
         return data
+
+
+class EmailMessageServiceSettings(Base):
+    """Email message service settings."""
+
+    ems_is_tls: bool = False
+    ems_host: str
+    ems_port: int = 587
+    ems_user: str
+    ems_password: SecretStr
+    ems_sender: EmailStr
